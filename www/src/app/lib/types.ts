@@ -6,14 +6,14 @@
 export type Symbol = "R" | "G" | "B"
 
 export interface Domino {
-    id: number;
+    dominoId: number;
     top: Symbol[]
     bottom: Symbol[]
 }
 
 export interface PlacedDomino extends Domino {
-    placementId: string;
-    position: number;
+    id: string;
+    index: number;
 }
 
 export interface PlayerState {
