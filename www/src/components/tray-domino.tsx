@@ -3,10 +3,10 @@ import type { Domino as DominoType } from "@/app/lib/types"
 import Domino from "./domino"
 
 export default function TrayDomino({ dominoId, top, bottom }: DominoType) {
-  const { ref } = useDraggable({ id: dominoId })
+  const { ref } = useDraggable({ id: dominoId, feedback: "clone" })
   return (
-    <li ref={ref}>
+    <div ref={ref}>
       <Domino dominoId={dominoId} top={top} bottom={bottom} />
-    </li>
+    </div>
   )
 }

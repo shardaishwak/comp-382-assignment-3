@@ -1,14 +1,17 @@
-import type { Domino } from "@/app/lib/types"
+import type { Domino as DominoType } from "@/app/lib/types"
 import PlacedDomino from "./placed-domino"
+import Domino from "./domino"
 import { DragDropProvider, useDroppable } from "@dnd-kit/react"
 import { move } from "@dnd-kit/helpers"
 
 export default function WorkingArea({
   dominos,
-  setDominos
+  setDominos,
+  selectedTrayDomino
 }: {
-  dominos: (Domino & { id: string })[]
-  setDominos: React.Dispatch<React.SetStateAction<(Domino & { id: string })[]>>
+  dominos: (DominoType & { id: string })[]
+  setDominos: React.Dispatch<React.SetStateAction<(DominoType & { id: string })[]>>
+  selectedTrayDomino: DominoType | undefined
 }) {
   const { ref, isDropTarget } = useDroppable({
     id: "working-area"
@@ -24,7 +27,7 @@ export default function WorkingArea({
         onDragEnd={(event) => {
           setDominos((items) => move(items, event))
         }}>
-        <ul
+        <div
           className={`${isDropTarget ? "border-[#86dee4]" : "border-mist-300"} w-full min-h-24 flex-1 p-2 flex items-start gap-2 overflow-x-scroll border border-b-4 rounded-xl rounded-tl-none duration-150`}>
           {dominos?.map((domino, i) => (
             <PlacedDomino
@@ -36,7 +39,16 @@ export default function WorkingArea({
               bottom={domino.bottom}
             />
           ))}
-        </ul>
+          {isDropTarget && selectedTrayDomino && (
+            <div className="opacity-50">
+              <Domino
+                dominoId={selectedTrayDomino.dominoId}
+                top={selectedTrayDomino.top}
+                bottom={selectedTrayDomino.bottom}
+              />
+            </div>
+          )}
+        </div>
       </DragDropProvider>
     </div>
   )
