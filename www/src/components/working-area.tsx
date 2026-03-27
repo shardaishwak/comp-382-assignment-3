@@ -9,8 +9,8 @@ export default function WorkingArea({
   setDominos,
   selectedTrayDomino
 }: {
-  dominos: (DominoType & { id: string })[]
-  setDominos: React.Dispatch<React.SetStateAction<(DominoType & { id: string })[]>>
+  dominos: (DominoType & { placementId: string })[]
+  setDominos: React.Dispatch<React.SetStateAction<(DominoType & { placementId: string })[]>>
   selectedTrayDomino: DominoType | undefined
 }) {
   const { ref, isDropTarget } = useDroppable({
@@ -31,21 +31,17 @@ export default function WorkingArea({
           className={`${isDropTarget ? "border-[#86dee4]" : "border-mist-300"} w-full min-h-24 flex-1 p-2 flex items-start gap-2 overflow-x-scroll border border-b-4 rounded-xl rounded-tl-none duration-150`}>
           {dominos?.map((domino, i) => (
             <PlacedDomino
-              key={domino.id}
+              key={domino.placementId}
+              placementId={domino.placementId}
+              position={i}
               id={domino.id}
-              index={i}
-              dominoId={domino.dominoId}
               top={domino.top}
               bottom={domino.bottom}
             />
           ))}
           {isDropTarget && selectedTrayDomino && (
             <div className="opacity-50">
-              <Domino
-                dominoId={selectedTrayDomino.dominoId}
-                top={selectedTrayDomino.top}
-                bottom={selectedTrayDomino.bottom}
-              />
+              <Domino id={selectedTrayDomino.id} top={selectedTrayDomino.top} bottom={selectedTrayDomino.bottom} />
             </div>
           )}
         </div>

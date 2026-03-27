@@ -10,14 +10,14 @@ import WorkingArea from "@/components/working-area"
 
 export default function Home() {
   const tray: Domino[] = [
-    { dominoId: 0, top: ["R", "G", "B"], bottom: ["B"] },
-    { dominoId: 1, top: ["G", "B"], bottom: ["R", "B"] },
-    { dominoId: 2, top: ["B", "B", "R"], bottom: ["G", "R"] },
-    { dominoId: 4, top: ["R", "R"], bottom: ["B", "B"] },
-    { dominoId: 5, top: ["G"], bottom: ["B"] },
-    { dominoId: 6, top: ["B", "B"], bottom: ["G"] }
+    { id: 0, top: ["R", "G", "B"], bottom: ["B"] },
+    { id: 1, top: ["G", "B"], bottom: ["R", "B"] },
+    { id: 2, top: ["B", "B", "R"], bottom: ["G", "R"] },
+    { id: 4, top: ["R", "R"], bottom: ["B", "B"] },
+    { id: 5, top: ["G"], bottom: ["B"] },
+    { id: 6, top: ["B", "B"], bottom: ["G"] }
   ]
-  const [working, setWorking] = useState<(Domino & { id: string })[]>([])
+  const [working, setWorking] = useState<(Domino & { placementId: string })[]>([])
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
 
   return (
@@ -36,7 +36,7 @@ export default function Home() {
             if (event.operation.target?.id == "working-area") {
               if (event.operation.source) {
                 const sourceId = event.operation.source.id as number
-                setWorking((prev) => [...prev, { ...tray[sourceId], id: nanoid() }])
+                setWorking((prev) => [...prev, { ...tray[sourceId], placementId: nanoid() }])
               }
             }
             setSelectedTrayDomino(undefined)

@@ -2,11 +2,11 @@ import { useDraggable } from "@dnd-kit/react"
 import type { Domino as DominoType } from "@/app/lib/types"
 import Domino from "./domino"
 
-export default function TrayDomino({ dominoId, top, bottom }: DominoType) {
-  const { ref } = useDraggable({ id: dominoId, feedback: "clone" })
+export default function TrayDomino({ id, top, bottom }: DominoType) {
+  const { ref } = useDraggable({ id: id, feedback: "clone" })
   return (
     <div ref={ref}>
-      <Domino dominoId={dominoId} top={top} bottom={bottom} />
+      <Domino id={id} top={top} bottom={bottom} />
     </div>
   )
 }
