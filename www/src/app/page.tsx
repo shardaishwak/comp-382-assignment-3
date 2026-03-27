@@ -13,9 +13,9 @@ export default function Home() {
     { id: 0, top: ["R", "G", "B"], bottom: ["B"] },
     { id: 1, top: ["G", "B"], bottom: ["R", "B"] },
     { id: 2, top: ["B", "B", "R"], bottom: ["G", "R"] },
-    { id: 4, top: ["R", "R"], bottom: ["B", "B"] },
-    { id: 5, top: ["G"], bottom: ["B"] },
-    { id: 6, top: ["B", "B"], bottom: ["G"] }
+    { id: 3, top: ["R", "R"], bottom: ["B", "B"] },
+    { id: 4, top: ["G"], bottom: ["B"] },
+    { id: 5, top: ["B", "B"], bottom: ["G"] }
   ]
   const [working, setWorking] = useState<(Domino & { placementId: string })[]>([])
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
