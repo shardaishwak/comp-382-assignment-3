@@ -1,9 +1,0 @@
-# Virtual environment files
-/venv
-
-# Envornment files
-.env
-
-# Cache
-__pycache__
-
