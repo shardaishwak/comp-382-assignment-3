@@ -1,0 +1,228 @@
+import random
+import uuid
+from typing import Optional
+
+COLORS = ["R", "G", "B"]
+MINIMUM_SEQUENCE_LENGTH = 1
+MAXIMUM_SEQUENCE_LENGTH = 4
+DEFAULT_SIZE = 6\
+
+class Domino:
+    def __init__(self, id: int, top: list, bottom: list):
+        self.id: int = id
+        self.top: list[str] = top
+        self.bottom: list[str] = bottom
+    
+    @property
+    def top_str(self) -> str:
+        return "".join(self.top)
+
+    @property
+    def bottom_str(self) -> str:
+        return "".join(self.bottom)
+    
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "top": self.top,
+            "bottom": self.bottom
+        }
+    
+    def __repr__(self):
+        return f"Domino(id={self.id}, top={self.top}, bottom={self.bottom})"
+    
+
+class PlacedDomino:
+    def __init__(self, domino: Domino, position: int):
+        self.domino: Domino = domino
+        self.positionId: str = str(uuid.uuid4())
+        self.position: int = position
+
+    def to_dict(self) -> dict:
+        return {
+        "id": self.domino.id,
+        "top": self.domino.top,
+        "bottom": self.domino.bottom,
+        "placementId": self.positionId,
+        "position": self.position
+        }
+    
+    def __repr__(self):
+        return f"PlacedDomino(id={self.domino.id}. pos={self.position})"
+    
+class PCPGameState:
+    def __init__(self, set_size: int = DEFAULT_SIZE, seed: Optional[int] = None):
+        self._rng = random.Random(seed)
+        self.instance: list[Domino] = []
+        self.sequence: list[PlacedDomino] = []
+        self._top_str: str = ""
+        self._bottom_str: str = ""
+        self.new_game(set_size)
+    
+    @property
+    def is_solved(self) -> bool:
+        return bool(self._top_str) and self._top_str == self._bottom_str
+    
+    @property
+    def prefixMatch(self) -> int:
+        count = 0
+        for a, b in zip(self._top_str, self._bottom_str):
+            if a == b:
+                count += 1
+            else:
+                break
+        return count
+    
+    @property
+    def validNextIds(self) -> list:
+        valid = []
+        for domino in self.instance:
+            new_top_str = self._top_str + domino.top_str
+            new_bottom_str = self._bottom_str + domino.bottom_str
+            if self._is_compatible(new_top_str, new_bottom_str):
+                valid.append(domino.id)
+        return valid
+    
+    @property
+    def isDeadEnd(self) -> bool:
+        return len(self.validNextIds) == 0 and not self.is_solved
+    
+    def place_domino(self,domino_id: int) -> PlacedDomino:
+        if self.is_solved:
+            raise RuntimeError("Puzzle already solved, call reset() or new_game() to start a new game.")
+        
+        domino = self._get_domino(domino_id)
+        tile = PlacedDomino(domino=domino, position = len(self.sequence))
+        self.sequence.append(tile)
+        self._top_str += domino.top_str
+        self._bottom_str += domino.bottom_str
+        return tile
+    
+    def undo(self) -> Optional[PlacedDomino]:
+        if not self.sequence:
+            return None
+        tile = self.sequence.pop()
+        self._top_str = "".join(t.domino.top_str for t in self.sequence)
+        self._bottom_str = "".join(t.domino.bottom_str for t in self.sequence)
+        return tile
+    
+    def reset(self):
+        self.sequence = []
+        self._top_str = ""
+        self._bottom_str = ""
+    
+    def new_game(self, set_size: int = DEFAULT_SIZE) -> None:
+        if set_size < 1:
+            raise ValueError("set_size must be at least 1.")
+        self.instance = self._generate_instance(set_size)
+        self.reset()
+
+    def snapshot(self) -> dict:
+        return {
+            "instance": [d.to_dict() for d in self.instance],
+            "sequence": [t.to_dict() for t in self.sequence],
+            "topString": self._top_str,
+            "bottomString": self._bottom_str,
+            "isSolved": self.is_solved,
+            "validNextIds": self.validNextIds,
+            "isDeadEnd": self.isDeadEnd,
+            "prefixMatch": self.prefixMatch,
+        }
+    def _generate_instance(self, set_size: int) -> list:
+        seen = set()
+        result = []
+        max_attempts = set_size * 2000
+
+        for _ in range(max_attempts):
+            if len(result) == set_size:
+                break
+            tl = self._rng.randint(MINIMUM_SEQUENCE_LENGTH, MAXIMUM_SEQUENCE_LENGTH)
+            bl = self._rng.randint(MINIMUM_SEQUENCE_LENGTH, MAXIMUM_SEQUENCE_LENGTH)
+            top = [self._rng.choice(COLORS) for _ in range(tl)]
+            bottom = [self._rng.choice(COLORS) for _ in range(bl)]
+            key = (tuple(top), tuple(bottom))
+
+            if key not in seen or top == bottom:
+                continue
+
+            seen.add(key)
+            result.append(Domino(id=len(result), top=top, bottom=bottom))
+
+        if len(result) < set_size:
+            raise RuntimeError(f"Could not generate enough unique dominoes.")
+        return result
+    
+    def _get_domino(self, domino_id: int) -> Domino:
+        for d in self.instance:
+            if d.id == domino_id:
+                return d
+        raise ValueError(
+            f"Domino with id {domino_id} not found in the current instance."
+            f"valid ids: {[d.id for d in self.instance]}"
+        )
+    
+    @staticmethod
+    def _is_compatible(top: str, bot: str) -> bool:
+        n = min(len(top), len(bot))
+        return top[:n] == bot[:n]
+    
+    def __repr__(self):
+        return (
+            f"PCPGameState("
+            f"set_size={len(self.instance)}, "
+            f"moves={len(self.sequence)}, "
+            f"solved={self.is_solved}, -"
+        )
+
+def _demo():
+    SEP = "=" * 56
+    print (SEP)
+    print ("PCP Game State Manager - example demonstration")
+    print (SEP)
+
+    gs = PCPGameState.__new__(PCPGameState)
+    gs._rng = None
+    gs.sequence = []
+    gs._top_str = ""
+    gs._bottom_str = ""
+    gs.instance = [
+        Domino(id=0, top=["R"], bottom=["R","G"]),
+        Domino(id=1, top=["G"], bottom=["G", "R"]),
+        Domino(id=2, top=["G","R"], bottom=["R"]),
+        Domino(id=3, top=["R","G","B"], bottom=["B"]),
+    ]
+
+    print ("\n instance (domino set):")
+    for d in gs.instance:
+        print(f"    id={d.id}  top={''.join(d.top):<6}  bot={''.join(d.bottom)}")
+    
+    solution = [0, 1, 2, 0, 3]
+
+    print (f"\napplying solution sequence: {solution}")
+    print (f"{'move':<6} {'domino':<8} {'topString':<12} {'bottomString':<12} {'prefixMatch':<12} {'isSolved'}")
+    print ("" + "-" * 60 )
+
+    for domino_id in solution:
+        gs.place_domino(domino_id)
+        snap = gs.snapshot()
+        print (
+            f" place ({domino_id})"
+            f" id={domino_id:<5} "
+            f" top = {snap['topString']:<12} "
+            f" bot = {snap['bottomString']:<12} "
+            f" prefixMatch={snap['prefixMatch']:<6} "
+            f" solved={snap['isSolved']}"
+        )
+    
+    print (f"\n Final topString: {gs._top_str}")
+    print (f" Final bottomString: {gs._bottom_str}")
+    print (f" Puzzle solved: {gs.is_solved}")
+    assert gs._top_str == "RGGRRRGB", f"top mismatch: {gs._top_str}"
+    assert gs._bottom_str == "RGGRRRGB", f"bottom mismatch: {gs._bottom_str}"
+    assert gs.is_solved == True
+    print ("\n top == bottom == RGGRRRGB -> Solution is correct!")
+
+    print (f"\n{SEP}")
+
+if __name__ == "__main__":
+    _demo()
