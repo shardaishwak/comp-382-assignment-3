@@ -1,5 +1,5 @@
 import type { Domino as DominoType } from "@/app/lib/types"
-import TrayDomino from "@/components/tray-domino"
+import TrayDomino from "@/components/domino/tray-domino"
 
 export default function TrayArea({ dominos }: { dominos: DominoType[] }) {
   return (

@@ -1,6 +1,6 @@
 import type { Domino as DominoType } from "@/app/lib/types"
-import PlacedDomino from "./placed-domino"
-import Domino from "./domino"
+import PlacedDomino from "./domino/placed-domino"
+import Domino from "./domino/domino"
 import { DragDropProvider, useDroppable } from "@dnd-kit/react"
 import { move } from "@dnd-kit/helpers"
 

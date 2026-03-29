@@ -5,7 +5,7 @@ import { nanoid } from "nanoid"
 import { DragDropProvider } from "@dnd-kit/react"
 import { isSortable } from "@dnd-kit/react/sortable"
 import type { Domino } from "./lib/types"
-import MenuBar from "@/components/menu-bar"
+import MenuBar from "@/components/menu-bar/menu-bar"
 import ProgressBar from "@/components/progress-bar"
 import TrayArea from "@/components/tray-area"
 import WorkingArea from "@/components/working-area"
@@ -22,17 +22,9 @@ export default function Home() {
   const [working, setWorking] = useState<(Domino & { placementId: string })[]>([])
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
 
-  // game states
-  const [p1, setP1] = useState<string>("Player 1")
-  const [p2, setP2] = useState<string>("Player 2")
-  const [time, setTime] = useState<number>(60000) // milliseconds
-  const [numMoves, setNumMoves] = useState<number>(0)
-  const [topPercentage, setTopPercentage] = useState<number>(25)
-  const [bottomPercentage, setBottomPercentage] = useState<number>(50)
-
   return (
     <div className="h-screen bg-background">
-      <MenuBar p1={p1} p2={p2} time={time} numMoves={numMoves} />
+      <MenuBar p1="Player 1" p2="Player 2" time={60000} numMoves={0} />
       <main className="w-full flex-1 px-8 py-8 md:px-16 md:py-16 flex flex-col items-center gap-4 md:gap-8">
         <DragDropProvider
           onDragStart={(event) => {
@@ -55,7 +47,7 @@ export default function Home() {
           <TrayArea dominos={tray} />
           <WorkingArea dominos={working} setDominos={setWorking} selectedTrayDomino={selectedTrayDomino} />
         </DragDropProvider>
-        <ProgressBar top={topPercentage} bottom={bottomPercentage} />
+        <ProgressBar top={25} bottom={50} />
       </main>
     </div>
   )
