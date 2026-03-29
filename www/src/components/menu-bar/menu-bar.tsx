@@ -23,7 +23,7 @@ export default function MenuBar({
   const formattedTime = formatTime(time)
 
   return (
-    <div className="px-8 md:px-16">
+    <div className="px-8 md:px-16 border-b border-border-normal">
       <div className="h-16 bg-background grid grid-cols-2">
         <div className="flex items-center gap-4 md:gap-6">
           <Button>
@@ -41,7 +41,7 @@ export default function MenuBar({
           <OptionsButton />
         </div>
       </div>
-      <div className="md:hidden float-right rounded-lg border border-border-normal py-2 font-semibold flex flex-col gap-1 divide-y divide-border-muted">
+      <div className="md:hidden float-right rounded-lg border border-border-normal mt-8 py-2 font-semibold flex flex-col gap-1 divide-y divide-border-muted">
         <p className="text-right px-4 pb-1">{formattedTime}</p>
         <p className="text-right px-4">Moves: {numMoves}</p>
       </div>
