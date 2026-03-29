@@ -20,7 +20,7 @@ export default function WorkingArea({
   return (
     <div ref={ref} className="w-full min-w-0 h-full flex flex-col">
       <div
-        className={`${isDropTarget ? "border-[#86dee4]" : "border-mist-300"} self-start -mb-px rounded-xl rounded-b-none border p-2 text-xs uppercase font-bold tracking-widest text-mist-400`}>
+        className="self-start -mb-px rounded-xl rounded-b-none border border-border-normal p-2 text-xs uppercase font-bold tracking-widest">
         Working Area
       </div>
       <DragDropProvider
@@ -28,7 +28,7 @@ export default function WorkingArea({
           setDominos((items) => move(items, event))
         }}>
         <div
-          className={`${isDropTarget ? "border-[#86dee4]" : "border-mist-300"} w-full min-h-24 flex-1 p-2 flex items-start gap-2 overflow-x-scroll border border-b-4 rounded-xl rounded-tl-none duration-150`}>
+          className="w-full min-h-32.5 flex-1 p-2 flex items-start gap-2 overflow-x-scroll border border-border-normal rounded-xl rounded-tl-none duration-150">
           {dominos?.map((domino, i) => (
             <PlacedDomino
               key={domino.placementId}
