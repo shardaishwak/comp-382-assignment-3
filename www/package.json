@@ -9,6 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@dnd-kit/helpers": "^0.3.2",
+    "@dnd-kit/react": "^0.3.2",
+    "@heroicons/react": "^2.2.0",
+    "nanoid": "^5.1.7",
     "next": "16.2.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
