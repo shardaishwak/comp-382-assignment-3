@@ -1,6 +1,6 @@
 "use client"
 import soundEffect from "../lib/sound"
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { nanoid } from "nanoid"
 import { DragDropProvider } from "@dnd-kit/react"
 import { isSortable } from "@dnd-kit/react/sortable"
@@ -10,6 +10,7 @@ import ProgressBar from "@/components/progress-bar"
 import TrayArea from "@/components/tray-area"
 import WorkingArea from "@/components/working-area"
 import ChainView from "@/components/chain-view"
+import { computeScores } from "../lib/scoring"
 
 export default function SinglePlayerPage() {
   const tray: Domino[] = [
@@ -22,6 +23,14 @@ export default function SinglePlayerPage() {
   ]
   const [working, setWorking] = useState<(Domino & { placementId: string })[]>([])
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
+  const scores = useMemo(() => computeScores(working), [working])
+  const prevScoreTotal = useRef(0);
+
+  useEffect(() => {
+    const total = scores.top + scores.bottom;
+    if (total > prevScoreTotal.current) soundEffect.match();
+    prevScoreTotal.current = total;
+  }, [scores])
 
   return (
     <div className="h-screen bg-background">
@@ -50,7 +59,7 @@ export default function SinglePlayerPage() {
           <WorkingArea dominos={working} setDominos={setWorking} selectedTrayDomino={selectedTrayDomino} />
         </DragDropProvider>
         <ChainView dominos={working} />
-        <ProgressBar top={25} bottom={50} />
+        <ProgressBar top={scores.top} bottom={scores.bottom} />
       </main>
     </div>
   )

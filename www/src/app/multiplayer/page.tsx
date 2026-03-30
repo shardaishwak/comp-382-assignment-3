@@ -1,6 +1,6 @@
 "use client"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useCallback, useState, Suspense } from "react"
+import { useCallback, useState, Suspense, useMemo, useRef, useEffect } from "react"
 import { nanoid } from "nanoid"
 import { DragDropProvider } from "@dnd-kit/react"
 import { isSortable } from "@dnd-kit/react/sortable"
@@ -12,6 +12,7 @@ import ProgressBar from "@/components/progress-bar"
 import TrayArea from "@/components/tray-area"
 import WorkingArea from "@/components/working-area"
 import ChainView from "@/components/chain-view"
+import { computeScores } from "../lib/scoring"
 
 /*
 TAILWIND CSS QUICK CHEATSHEET
@@ -41,6 +42,13 @@ function MultiplayerContent() {
 
   const [working, setWorking] = useState<(Domino & { placementId: string })[]>([])
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
+  const scores = useMemo(() => computeScores(working), [working])
+  const prevScoreTotal = useRef(0);
+
+  useEffect(() => {
+    const total = scores.top + scores.bottom;
+    if (total > prevScoreTotal.current && prevScoreTotal.current >= 0) soundEffect.match();
+  }, [scores])
 
   // Create a new room go into it
   const createRoom = useCallback(() => {
@@ -110,7 +118,7 @@ function MultiplayerContent() {
           </DragDropProvider>
 
           <ChainView dominos={working} />
-          <ProgressBar top={25} bottom={50} />
+          <ProgressBar top={scores.top} bottom={scores.bottom} />
         </main>
       </div>
     )
