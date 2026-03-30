@@ -9,24 +9,14 @@ const DOT_COLOR: Record<Symbol, string> = {
 export default function ChainView({ dominos }: { dominos: Domino[] }) {
   if (dominos.length === 0) return null
 
-  // Check if adjacent dominos match at their edges
-  const topMatches: boolean[] = []
-  const bottomMatches: boolean[] = []
-  for (let i = 0; i < dominos.length - 1; i++) {
-    const left = dominos[i]
-    const right = dominos[i + 1]
-    topMatches.push(left.top[left.top.length - 1] === right.top[0])
-    bottomMatches.push(left.bottom[left.bottom.length - 1] === right.bottom[0])
-  }
-
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-border-normal bg-background2 px-3 py-2.5">
       <div className="flex flex-col gap-1.5 w-fit min-w-full">
         {/* Top row */}
-        <Row label="top" dominos={dominos} row="top" matches={topMatches} />
+        <Row label="top" dominos={dominos} row="top" />
         <div className="border-t border-border-normal" />
         {/* Bottom row */}
-        <Row label="btm" dominos={dominos} row="bottom" matches={bottomMatches} />
+        <Row label="btm" dominos={dominos} row="bottom" />
       </div>
     </div>
   )
@@ -36,12 +26,10 @@ function Row({
   label,
   dominos,
   row,
-  matches
 }: {
   label: string
   dominos: Domino[]
   row: "top" | "bottom"
-  matches: boolean[]
 }) {
   return (
     <div className="flex items-center">
@@ -50,7 +38,7 @@ function Row({
         {dominos.map((d, di) => (
           <div key={di} className="flex items-center">
             {di > 0 && (
-              <div className={`mx-1.5 w-1 h-1 rounded-full ${matches[di - 1] ? "bg-white/60" : "bg-white/10"}`} />
+              <div className="mx-0.5 w-px h-4 border-l border-dashed border-white/20" />
             )}
             <div className="flex items-center gap-1">
               {d[row].map((s, si) => (
