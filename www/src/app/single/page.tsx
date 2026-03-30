@@ -9,6 +9,7 @@ import MenuBar from "@/components/menu-bar/menu-bar"
 import ProgressBar from "@/components/progress-bar"
 import TrayArea from "@/components/tray-area"
 import WorkingArea from "@/components/working-area"
+import ChainView from "@/components/chain-view"
 
 export default function SinglePlayerPage() {
   const tray: Domino[] = [
@@ -48,6 +49,7 @@ export default function SinglePlayerPage() {
           <TrayArea dominos={tray} />
           <WorkingArea dominos={working} setDominos={setWorking} selectedTrayDomino={selectedTrayDomino} />
         </DragDropProvider>
+        <ChainView dominos={working} />
         <ProgressBar top={25} bottom={50} />
       </main>
     </div>

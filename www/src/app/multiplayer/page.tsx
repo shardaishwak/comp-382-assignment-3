@@ -11,6 +11,7 @@ import MenuBar from "@/components/menu-bar/menu-bar"
 import ProgressBar from "@/components/progress-bar"
 import TrayArea from "@/components/tray-area"
 import WorkingArea from "@/components/working-area"
+import ChainView from "@/components/chain-view"
 
 /*
 TAILWIND CSS QUICK CHEATSHEET
@@ -108,7 +109,7 @@ function MultiplayerContent() {
             />
           </DragDropProvider>
 
-          {/* Progress bar UI, this will need more work....*/}
+          <ChainView dominos={working} />
           <ProgressBar top={25} bottom={50} />
         </main>
       </div>
