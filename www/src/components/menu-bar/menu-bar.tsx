@@ -1,4 +1,7 @@
+"use client"
+
 import { ArrowLeftIcon } from "@heroicons/react/16/solid"
+import { useRouter } from "next/navigation"
 import Button from "./button"
 import OptionsButton from "./options-button"
 
@@ -21,12 +24,13 @@ export default function MenuBar({
   }
 
   const formattedTime = formatTime(time)
+  const router = useRouter()
 
   return (
     <div className="px-8 md:px-16 border-b border-border-normal">
       <div className="h-16 bg-background grid grid-cols-2">
         <div className="flex items-center gap-4 md:gap-6">
-          <Button>
+          <Button type="button" onClick={() => router.push("/")}>
             <ArrowLeftIcon className="w-4 h-4" />
             <p className="hidden md:inline">Back</p>
           </Button>
