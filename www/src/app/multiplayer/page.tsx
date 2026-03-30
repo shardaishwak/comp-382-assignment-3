@@ -6,6 +6,7 @@ import { DragDropProvider } from "@dnd-kit/react"
 import { isSortable } from "@dnd-kit/react/sortable"
 
 import type { Domino } from "../lib/types"
+import soundEffect from "../lib/sound"
 import MenuBar from "@/components/menu-bar/menu-bar"
 import ProgressBar from "@/components/progress-bar"
 import TrayArea from "@/components/tray-area"
@@ -88,6 +89,7 @@ function MultiplayerContent() {
                     ...prev,
                     { ...tray[sourceId], placementId: nanoid() }
                   ])
+                  soundEffect.place()
                 }
               }
 
@@ -118,7 +120,7 @@ function MultiplayerContent() {
       {/* Go back home */}
       <button
         type="button"
-        onClick={() => router.push("/")}
+        onClick={() => { soundEffect.tick(); router.push("/") }}
         className="text-sm text-gray-500 hover:text-gray-400 self-start max-w-md w-full text-left ">
         Back
       </button>
@@ -130,7 +132,7 @@ function MultiplayerContent() {
         <div className="flex flex-col gap-2">
           <span className="text-sm text-gray-500">Create a room</span>
           <button
-            onClick={createRoom}
+            onClick={() => { soundEffect.tick(); createRoom() }}
             className="py-3 px-4 rounded border border-border-light text-gray-400 hover:bg-background2">
             Create room
           </button>
@@ -154,7 +156,7 @@ function MultiplayerContent() {
               className="flex-1 py-2 px-3 rounded border border-border-light bg-background2 text-gray-300"
             />
             <button
-              onClick={joinRoom}
+              onClick={() => { soundEffect.tick(); joinRoom() }}
               className="py-2 px-4 rounded border border-border-light text-gray-400 hover:bg-background2">
               Join
             </button>

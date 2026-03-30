@@ -40,6 +40,7 @@ export default function SinglePlayerPage() {
               if (event.operation.source) {
                 const sourceId = event.operation.source.id as number
                 setWorking((prev) => [...prev, { ...tray[sourceId], placementId: nanoid() }])
+                soundEffect.place()
               }
             }
             setSelectedTrayDomino(undefined)

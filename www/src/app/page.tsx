@@ -1,4 +1,6 @@
+"use client"
 import Link from "next/link"
+import soundEffect from "./lib/sound"
 
 export default function Page() {
   return (
@@ -7,11 +9,13 @@ export default function Page() {
       <nav className="flex flex-col gap-4">
         <Link
           href="/single"
+          onClick={() => soundEffect.tick()}
           className="flex-1 text-center py-3 px-4 rounded border border-border-light text-gray-400 hover:bg-background2">
           Single player
         </Link>
         <Link
           href="/multiplayer"
+          onClick={() => soundEffect.tick()}
           className="flex-1 text-center py-3 px-4 rounded border border-border-light text-gray-400 hover:bg-background2">
           Multiplayer
         </Link>
