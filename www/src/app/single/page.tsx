@@ -14,12 +14,12 @@ import { computeScores } from "../lib/scoring"
 
 export default function SinglePlayerPage() {
   const tray: Domino[] = [
-    { id: 0, top: ["R", "G", "B"], bottom: ["B"] },
-    { id: 1, top: ["G", "B"], bottom: ["R", "B"] },
+    { id: 0, top: ["R", "G", "B"], bottom: ["R"] },
+    { id: 1, top: ["G", "B"], bottom: ["G", "B"] },
     { id: 2, top: ["B", "B", "R"], bottom: ["G", "R"] },
-    { id: 3, top: ["R", "R"], bottom: ["B", "B"] },
+    { id: 3, top: ["R", "R"], bottom: ["R", "B"] },
     { id: 4, top: ["G"], bottom: ["B"] },
-    { id: 5, top: ["B", "B"], bottom: ["G"] }
+    { id: 5, top: ["B", "B"], bottom: ["B", "G"] }
   ]
   const [working, setWorking] = useState<(Domino & { placementId: string })[]>([])
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
@@ -27,8 +27,8 @@ export default function SinglePlayerPage() {
   const prevScoreTotal = useRef(0);
 
   useEffect(() => {
-    const total = scores.top + scores.bottom;
-    if (total > prevScoreTotal.current) soundEffect.match();
+    const total = scores.overallMatch;
+    if (total === 100 && prevScoreTotal.current < 100) soundEffect.match();
     prevScoreTotal.current = total;
   }, [scores])
 
@@ -59,7 +59,7 @@ export default function SinglePlayerPage() {
           <WorkingArea dominos={working} setDominos={setWorking} selectedTrayDomino={selectedTrayDomino} />
         </DragDropProvider>
         <ChainView dominos={working} />
-        <ProgressBar top={scores.top} bottom={scores.bottom} />
+        <ProgressBar progress={scores.overallMatch} />
       </main>
     </div>
   )
