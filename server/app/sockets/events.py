@@ -279,3 +279,110 @@ def handle_join_room(data):
         )
         _start_timer(room_id)
 
+@socketio.on("place_domino")
+def handle_place_domino(data):
+    sid = request.sid
+    room_id = data.get("roomId")
+    domino_id = data.get("dominoId")
+
+    room = rooms.get(room_id)
+    if not room or sid not in room["players"]:
+        emit("error", {"message": "Invalid room or player."})
+        return
+    if room["status"] != "playing":
+        emit("error", {"message": "Game is not active."})
+        return
+
+    player = room["players"][sid]
+    game = player["game"]
+
+    try:
+        game.place_domino(domino_id)
+    except (ValueError, RuntimeError) as e:
+        emit("error", {"message": str(e)})
+        return
+
+    player["moves"] += 1
+    result = _move_result(game, player["moves"])
+    emit("move_result", result)
+
+    _emit_opponent_update(room_id, sid, game, player["moves"])
+
+    # Win detection
+    if game.is_solved:
+        room["status"] = "finished"
+        room["winner"] = sid
+        socketio.emit(
+            "match_found",
+            {
+                "roomId": room_id,
+                "winnerId": sid,
+                "winnerName": player["name"],
+                "sequence": [t.to_dict() for t in game.sequence],
+            },
+            to=room_id,
+        )
+
+# TODO: Should we add this to the options?
+@socketio.on("undo_move")
+def handle_undo_move(data):
+    sid = request.sid
+    room_id = data.get("roomId")
+
+    room = rooms.get(room_id)
+    if not room or sid not in room["players"]:
+        emit("error", {"message": "Invalid room or player."})
+        return
+
+    player = room["players"][sid]
+    game = player["game"]
+    removed = game.undo()
+
+    if removed is None:
+        emit("error", {"message": "Nothing to undo."})
+        return
+
+    player["moves"] += 1
+    result = _move_result(game, player["moves"])
+    emit("move_result", result)
+    _emit_opponent_update(room_id, sid, game, player["moves"])
+
+
+# TODO: Do we need reset sequence?
+
+@socketio.on("request_hints")
+def handle_request_hints(data):
+    sid = request.sid
+    room_id = data.get("roomId")
+
+    room = rooms.get(room_id)
+    if not room or sid not in room["players"]:
+        emit("error", {"message": "Invalid room or player."})
+        return
+
+    game = room["players"][sid]["game"]
+    emit("hint_update", _hints_payload(game))
+
+
+@socketio.on("leave_room")
+def handle_leave_room(data):
+    sid = request.sid
+    room_id = data.get("roomId")
+
+    room = rooms.get(room_id)
+    if not room:
+        return
+
+    player = room["players"].pop(sid, None)
+    sid_to_room.pop(sid, None)
+    leave_room(room_id)
+
+    if player:
+        socketio.emit(
+            "player_left",
+            {"roomId": room_id, "playerId": sid, "playerName": player["name"]},
+            to=room_id,
+        )
+
+    if not room["players"]:
+        rooms.pop(room_id, None)
