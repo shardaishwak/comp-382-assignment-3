@@ -142,7 +142,7 @@ class PCPGameState:
             bottom = [self._rng.choice(COLORS) for _ in range(bl)]
             key = (tuple(top), tuple(bottom))
 
-            if key not in seen or top == bottom:
+            if key in seen or top == bottom:
                 continue
 
             seen.add(key)
