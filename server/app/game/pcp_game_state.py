@@ -58,7 +58,17 @@ class PCPGameState:
         self._top_str: str = ""
         self._bottom_str: str = ""
         self.new_game(set_size)
-    
+
+    @classmethod
+    def from_dominoes(cls, dominoes: list["Domino"]) -> "PCPGameState":
+        obj = cls.__new__(cls)
+        obj._rng = None
+        obj.instance = list(dominoes)
+        obj.sequence = []
+        obj._top_str = ""
+        obj._bottom_str = ""
+        return obj
+
     @property
     def is_solved(self) -> bool:
         return bool(self._top_str) and self._top_str == self._bottom_str

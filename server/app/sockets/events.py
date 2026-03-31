@@ -6,25 +6,57 @@ from flask import request
 from flask_socketio import emit, join_room, leave_room
 
 from app import socketio
-from app.game.pcp_game_state import PCPGameState
+from app.game.pcp_game_state import PCPGameState, generate_structured_instance
 from app.game.hint_system import compute_hints
+
+LEVEL_CONFIG = {
+    "easy": {
+        "id": "easy",
+        "name": "Easy",
+        "description": "Shorter strings, fewer dominoes",
+        "dominoes": 4,
+        "stringLength": 8,
+        "minSegment": 1,
+        "maxSegment": 3,
+        "time": 300,
+    },
+    "medium": {
+        "id": "medium",
+        "name": "Medium",
+        "description": "Balanced challenge",
+        "dominoes": 6,
+        "stringLength": 12,
+        "minSegment": 1,
+        "maxSegment": 4,
+        "time": 240,
+    },
+    "hard": {
+        "id": "hard",
+        "name": "Hard",
+        "description": "Longer strings, more dominoes",
+        "dominoes": 8,
+        "stringLength": 16,
+        "minSegment": 2,
+        "maxSegment": 4,
+        "time": 180,
+    },
+}
 
 # The data structure that we are working on is the following:
 # rooms[room_id] = {
 #   "players": { sid: { "name": str, "game": PCPGameState, "moves": 0 } },
-#   "instance_dicts": [...],       # shared domino dicts
+#   "instance_dicts": [...],       # shared domino dicts (from structured generation)
+#   "dominoes": [Domino, ...],     # actual Domino objects for new players
+#   "level": dict,                 # level config dict sent to clients
 #   "status": "waiting"|"playing"|"finished",
 #   "timer": int (seconds remaining),
 #   "timer_thread": Thread | None,
 #   "winner": str | None,
-#   "seed": int,
 # }
 rooms: dict = {}
 
 # sid -> room_id mapping for fast disconnect cleanup
 sid_to_room: dict = {}
-
-DEFAULT_TIMER = 300
 
 def _generate_room_id() -> str:
     return uuid.uuid4().hex[:6].upper()
