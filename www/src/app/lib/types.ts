@@ -54,3 +54,108 @@ export interface GameState {
     isDeadend: boolean;
     prefixMatch: number;
 }
+
+export interface CreateRoomPayload {
+    playerName: string;
+}
+
+export interface JoinRoomPayload {
+    roomId: string;
+    playerName: string;
+}
+
+export interface PlaceDominoPayload {
+    roomId: string;
+    dominoId: number;
+}
+
+export interface UndoMovePayload {
+    roomId: string;
+}
+
+export interface ResetSequencePayload {
+    roomId: string;
+}
+
+export interface RequestHintsPayload {
+    roomId: string;
+}
+
+export interface LeaveRoomPayload {
+    roomId: string;
+}
+
+/** Server → Client */
+export interface RoomCreatedEvent {
+    roomId: string;
+    instance: Domino[];
+}
+
+export interface PlayerJoinedEvent {
+    roomId: string;
+    playerName: string;
+    playerId: string;
+}
+
+export interface GameStartEvent {
+    roomId: string;
+    instance: Domino[];
+    players: Record<string, PlayerState>;
+    timer: number;
+}
+
+export interface MoveResultEvent {
+    sequence: PlacedDomino[];
+    topString: string;
+    bottomString: string;
+    validNextIds: number[];
+    isDeadEnd: boolean;
+    isSolved: boolean;
+    prefixMatch: number;
+    moves: number;
+}
+
+export interface OpponentUpdateEvent {
+    opponentId: string;
+    sequence: PlacedDomino[];
+    moves: number;
+    prefixMatch: number;
+}
+
+export interface HintData {
+    dominoId: number;
+    score: number;
+    explanation: string;
+}
+
+export interface HintUpdateEvent {
+    hints: HintData[];
+    bestHint: HintData | null;
+}
+
+export interface TimerTickEvent {
+    roomId: string;
+    remaining: number;
+}
+
+export interface TimeUpEvent {
+    roomId: string;
+    winner: string | null;
+}
+
+export interface MatchFoundEvent {
+    roomId: string;
+    winnerId: string;
+    winnerName: string;
+    sequence: PlacedDomino[];
+}
+
+export interface PlayerLeftEvent {
+    roomId: string;
+    playerId: string;
+    playerName: string;
+}
+
+export interface ErrorEvent {
+    message: string;
+}
