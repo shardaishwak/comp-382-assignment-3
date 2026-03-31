@@ -2,7 +2,7 @@
 
 from collections import deque
 from typing import List, Tuple, Optional
-from pcp_game_state import PCPGameState, Domino
+from .pcp_game_state import PCPGameState, Domino
 
 
 class HintType:
