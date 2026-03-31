@@ -125,3 +125,157 @@ def _emit_opponent_update(room_id: str, my_sid: str, game: PCPGameState, moves: 
             },
             to=opp,
         )
+
+
+def _start_timer(room_id: str):
+    def _tick():
+        while True:
+            _time.sleep(1)
+            room = rooms.get(room_id)
+            if not room or room["status"] != "playing":
+                return
+            room["timer"] -= 1
+            socketio.emit("timer_tick", {"roomId": room_id, "remaining": room["timer"]}, to=room_id)
+            if room["timer"] <= 0:
+                room["status"] = "finished"
+                # determine winner by most prefix match
+                best_sid = None
+                best_prefix = -1
+                for sid, p in room["players"].items():
+                    pm = p["game"].prefixMatch
+                    if pm > best_prefix:
+                        best_prefix = pm
+                        best_sid = sid
+                socketio.emit(
+                    "time_up",
+                    {"roomId": room_id, "winner": best_sid},
+                    to=room_id,
+                )
+                return
+
+    t = threading.Thread(target=_tick, daemon=True)
+    t.start()
+    rooms[room_id]["timer_thread"] = t
+
+
+# ── Socket events ───────────────────────────────────────────
+
+@socketio.on("connect")
+def handle_connect():
+    print(f"Client connected: {request.sid}")
+
+
+@socketio.on("disconnect")
+def handle_disconnect():
+    sid = request.sid
+    print(f"Client disconnected: {sid}")
+    room_id = sid_to_room.pop(sid, None)
+    if not room_id:
+        return
+    room = rooms.get(room_id)
+    if not room:
+        return
+    player = room["players"].pop(sid, None)
+    if player:
+        leave_room(room_id)
+        socketio.emit(
+            "player_left",
+            {"roomId": room_id, "playerId": sid, "playerName": player["name"]},
+            to=room_id,
+        )
+    if not room["players"]:
+        rooms.pop(room_id, None)
+
+
+@socketio.on("create_room")
+def handle_create_room(data):
+    sid = request.sid
+    player_name = data.get("playerName", "Player")
+    level_id = data.get("level", "medium")
+    room_id = _generate_room_id()
+
+    level_cfg = LEVEL_CONFIG.get(level_id)
+    if not level_cfg:
+        emit("error", {"message": f"Unknown level: {level_id}"})
+        return
+
+    structured = generate_structured_instance(
+        string_length=level_cfg["stringLength"],
+        array_length=level_cfg["dominoes"],
+        min_segment_length=level_cfg["minSegment"],
+        max_segment_length=level_cfg["maxSegment"],
+    )
+
+    game = PCPGameState.from_dominoes(structured.dominoes)
+    instance_dicts = [d.to_dict() for d in structured.dominoes]
+
+    rooms[room_id] = {
+        "players": {
+            sid: {"name": player_name, "game": game, "moves": 0}
+        },
+        "dominoes": structured.dominoes,
+        "instance_dicts": instance_dicts,
+        "level": level_cfg,
+        "status": "waiting",
+        "timer": level_cfg["time"],
+        "timer_thread": None,
+        "winner": None,
+    }
+    sid_to_room[sid] = room_id
+    join_room(room_id)
+
+    emit("room_created", {
+        "roomId": room_id,
+        "level": level_cfg,
+        "instance": instance_dicts,
+    })
+
+
+@socketio.on("join_room")
+def handle_join_room(data):
+    sid = request.sid
+    room_id = data.get("roomId", "").strip().upper()
+    player_name = data.get("playerName", "Player")
+
+    room = rooms.get(room_id)
+    if not room:
+        emit("error", {"message": f"Room {room_id} not found."})
+        return
+    if room["status"] != "waiting":
+        emit("error", {"message": "Game already in progress."})
+        return
+    if len(room["players"]) >= 2:
+        emit("error", {"message": "Room is full."})
+        return
+
+    game = PCPGameState.from_dominoes(room["dominoes"])
+    room["players"][sid] = {"name": player_name, "game": game, "moves": 0}
+    sid_to_room[sid] = room_id
+    join_room(room_id)
+
+    emit(
+        "player_joined",
+        {"roomId": room_id, "playerName": player_name, "playerId": sid},
+        to=room_id,
+    )
+
+    # Auto-start when 2 players
+    if len(room["players"]) >= 2:
+        room["status"] = "playing"
+        players_dict = {}
+        for s, p in room["players"].items():
+            players_dict[s] = _player_state_dict(s, p, p["game"])
+
+        socketio.emit(
+            "game_start",
+            {
+                "roomId": room_id,
+                "level": room["level"],
+                "instance": room["instance_dicts"],
+                "players": players_dict,
+                "timer": room["timer"],
+            },
+            to=room_id,
+        )
+        _start_timer(room_id)
+
