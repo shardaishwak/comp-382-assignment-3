@@ -26,12 +26,17 @@ export interface PlayerState {
     connected: number;
 }
 
+export type LevelId = "easy" | "medium" | "hard";
+
 export interface Level {
-    id: number;
-    name: number;
-    description: number;
-    time: number
-    // TODO: Any other parameter based on the game generation
+    id: LevelId;
+    name: string;
+    description: string;
+    time: number;
+    dominoes: number;
+    stringLength: number;
+    minSegment: number;
+    maxSegment: number;
 }
 
 export interface RoomState {
@@ -57,6 +62,7 @@ export interface GameState {
 
 export interface CreateRoomPayload {
     playerName: string;
+    level: LevelId;
 }
 
 export interface JoinRoomPayload {
@@ -88,6 +94,7 @@ export interface LeaveRoomPayload {
 /** Server → Client */
 export interface RoomCreatedEvent {
     roomId: string;
+    level: Level;
     instance: Domino[];
 }
 
@@ -99,6 +106,7 @@ export interface PlayerJoinedEvent {
 
 export interface GameStartEvent {
     roomId: string;
+    level: Level;
     instance: Domino[];
     players: Record<string, PlayerState>;
     timer: number;
