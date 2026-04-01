@@ -25,7 +25,7 @@ def app():
     return app
 
 @pytest.fixture
-def client(app):
+def clients(app):
     c1 = socketio.test_client(app)
     c2 = socketio.test_client(app)
     assert c1.is_connected()
@@ -57,11 +57,11 @@ def flush(client):
 
 class TestCreateRoom:
     def test_room_created_payload_shape(self, single_client):
-        single_client.emit('create_room', {"Playername": "Alice", "level": "easy"})
+        single_client.emit('create_room', {"playerName": "Alice", "level": "easy"})
         data = get_event(single_client, 'room_created')
         assert data is not None, "room_created event not received"
 
-        assert 'room_id' in data
+        assert 'roomId' in data
         assert "level" in data
         assert "instance" in data
 
@@ -69,20 +69,20 @@ class TestCreateRoom:
         assert len(data["roomId"]) == 6 # this is the uuid length
 
     def test_level_shape(self, single_client):
-        single_client.emit('create_room', {"Playername": "Alice", "level": "medium"})
-        data = get_event(single_client, 'room_created')
+        single_client.emit("create_room", {"playerName": "Alice", "level": "medium"})
+        data = get_event(single_client, "room_created")
         assert data is not None, "room_created event not received"
         level = data["level"]
 
-        for key in ("id", "name", "description", "time", "dominoes", "stringLength", "minSegments", "maxSegments"):
+        for key in ("id", "name", "description", "time", "dominoes", "stringLength", "minSegment", "maxSegment"):
             assert key in level, f"Level missing key: {key}"
 
         assert level["id"] == "medium"
-        assert isinstance(level["time"], str)
-        assert isinstance(level["dominoes"], list)
+        assert isinstance(level["time"], int)
+        assert isinstance(level["dominoes"], int)
 
     def test_instance_domino_shape(self, single_client):
-        single_client.emit('create_room', {"Playername": "Alice", "level": "easy"})
+        single_client.emit('create_room', {"playerName": "Alice", "level": "easy"})
         data = get_event(single_client, 'room_created')
         assert data is not None, "room_created event not received"
         instance = data["instance"]
@@ -107,11 +107,11 @@ class TestCreateRoom:
         for level_id, count in expected.items():
             ev.rooms.clear()
             ev.sid_to_room.clear()
-            c = socketio
-            c.emit('create_room', {"playerName": "Alice", "level": level_id})
-            data = get_event(c, 'room_created')
-            assert data is not None, f"room_created event not received for level {level_id}"
-            assert len(data["instance"]) == count, f"{level_id}: expected {count} dominoes, got {len(data['instance'])}"
+            c = socketio.test_client(app)
+            c.emit("create_room", {"playerName": "Alice", "level": level_id})
+            data = get_event(c, "room_created")
+            assert data is not None, f"room_created not received for {level_id}"
+            assert len(data["instance"]) == count, f"{level_id}: expected {count} dominoes"
             c.disconnect()
     
     def test_invalid_level(self, single_client):
@@ -416,6 +416,28 @@ class TestRequestHints:
             assert "dominoId" in bh
             assert "score" in bh
             assert "explanation" in bh
+
+class TestLeaveRoom:
+    def test_player_left_payload(self, clients):
+        c1, c2 = clients
+        c1.emit("create_room", {"playerName": "Alice", "level": "easy"})
+        room = get_event(c1, "room_created")
+        assert room is not None
+        room_id = room["roomId"]
+        flush(c1)
+        c2.emit("join_room", {"roomId": room_id, "playerName": "Bob"})
+        flush(c1)
+        flush(c2)
+
+        c2.emit("leave_room", {"roomId": room_id})
+        left = get_event(c1, "player_left")
+        assert left is not None, "player_left not received"
+
+        for key in ("roomId", "playerId", "playerName"):
+            assert key in left, f"PlayerLeftEvent missing key: {key}"
+
+        assert left["roomId"] == room_id
+        assert left["playerName"] == "Bob"
 
 class TestDisconnect:
     def test_disconnect_broadcasts_player_left(self, app):
