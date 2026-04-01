@@ -1,25 +1,99 @@
 "use client"
-import Link from "next/link"
 import soundEffect from "./lib/sound"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { DragDropProvider } from "@dnd-kit/react"
+import { ArrowRightIcon, ArrowUturnLeftIcon } from "@heroicons/react/16/solid"
+import Button from "@/components/menu-bar/button"
+import OptionsList from "@/components/main-menu/options-list"
+import OptionsDropArea from "@/components/main-menu/options-drop-area"
+import type { GameOptions } from "./lib/types"
+import { EMPTY_OPTIONS } from "./lib/constants"
 
 export default function Page() {
+  const [joinInput, setJoinInput] = useState<string>("")
+  const [selectedOptions, setSelectedOptions] = useState<GameOptions>(EMPTY_OPTIONS)
+  const [curSelected, setCurSelected] = useState<Partial<GameOptions>>({})
+  const router = useRouter()
+
+  const getOptionKey = (sourceId: string) =>
+    sourceId === "hints" || sourceId === "timer" ? sourceId : sourceId.split("-")[0]
+
+  const getOptionValue = (sourceId: string): string | boolean =>
+    sourceId === "hints" || sourceId === "timer" ? true : sourceId
+
+  const handleStart = () => {
+    if (selectedOptions.players === "players-1") {
+      router.push("/single")
+    } else {
+      router.push("/multiplayer")
+    }
+  }
+
+  const isResetDisabled =
+    selectedOptions.players === "" &&
+    selectedOptions.difficulty === "" &&
+    !selectedOptions.hints &&
+    !selectedOptions.timer
+
+  const isStartDisabled =
+    selectedOptions.players === "" ||
+    (selectedOptions.multiplayer !== "multiplayer-1" && selectedOptions.difficulty === "")
+
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-10 px-6">
-      <h1 className="text-xl text-gray-400">Domino Game</h1>
-      <nav className="flex flex-col gap-4">
-        <Link
-          href="/single"
-          onClick={() => soundEffect.tick()}
-          className="flex-1 text-center py-3 px-4 rounded border border-border-light text-gray-400 hover:bg-background2">
-          Single player
-        </Link>
-        <Link
-          href="/multiplayer"
-          onClick={() => soundEffect.tick()}
-          className="flex-1 text-center py-3 px-4 rounded border border-border-light text-gray-400 hover:bg-background2">
-          Multiplayer
-        </Link>
-      </nav>
+    <div className="min-h-screen bg-background">
+      {/* menu bar */}
+      <div className="px-8 md:px-16 border-b border-border-normal">
+        <div className="h-16 bg-background grid grid-cols-2">
+          <div className="flex items-center gap-4 md:gap-6">
+            <h1 className="font-bold text-gray-500 text-base whitespace-nowrap">PCP Domino Game</h1>
+          </div>
+        </div>
+      </div>
+
+      <main className="w-full px-8 py-8 md:px-16 md:py-16 flex flex-col gap-4 md:gap-8">
+        <DragDropProvider
+          onDragStart={({ operation: { source } }) => {
+            const id = source?.id as string
+            setCurSelected({ [getOptionKey(id)]: getOptionValue(id) })
+          }}
+          onDragEnd={({ operation: { source, target }, canceled }) => {
+            if (canceled || target?.id !== "options-drop-area") return
+            const id = source?.id as string
+            soundEffect.place()
+            setSelectedOptions((prev) => ({ ...prev, [getOptionKey(id)]: getOptionValue(id) }))
+            setCurSelected({})
+          }}>
+          <div className="w-full flex flex-col items-end gap-4 md:gap-8">
+            <OptionsDropArea selectedOptions={selectedOptions} curSelected={curSelected} />
+
+            {/* room code input area */}
+            {selectedOptions.multiplayer === "multiplayer-1" && (
+              <div>
+                <input
+                  value={joinInput}
+                  onChange={(e) => setJoinInput(e.target.value)}
+                  placeholder="room code"
+                  className="flex-1 py-2 px-3 rounded-lg border border-border-normal text-sm hover:border-border-light text-gray-500 duration-150"
+                />
+              </div>
+            )}
+
+            {/* reset / start / join buttons */}
+            <div className="flex gap-4">
+              <Button onClick={() => setSelectedOptions(EMPTY_OPTIONS)} disabled={isResetDisabled}>
+                Reset <ArrowUturnLeftIcon className="w-4 h-4" />
+              </Button>
+              <Button onClick={handleStart} disabled={isStartDisabled}>
+                {selectedOptions.multiplayer === "multiplayer-1" ? "join" : "start"}
+                <ArrowRightIcon className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <OptionsList selectedOptions={selectedOptions} />
+        </DragDropProvider>
+      </main>
     </div>
   )
 }

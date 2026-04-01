@@ -167,3 +167,11 @@ export interface PlayerLeftEvent {
 export interface ErrorEvent {
     message: string;
 }
+
+export interface GameOptions {
+    players: string
+    difficulty: string
+    multiplayer: string
+    hints: boolean
+    timer: boolean 
+}
