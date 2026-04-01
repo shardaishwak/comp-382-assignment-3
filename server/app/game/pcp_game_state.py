@@ -333,21 +333,27 @@ def generate_structured_instance(
 
     source_string = generate_source_string(length=string_length, alphabet=alphabet)
 
-    top_lengths = generate_partition(
-        part_count=array_length,
-        total_length=string_length,
-        min_segment_length=min_segment_length,
-        max_segment_length=max_segment_length,
-    )
-    bottom_lengths = generate_partition(
-        part_count=array_length,
-        total_length=string_length,
-        min_segment_length=min_segment_length,
-        max_segment_length=max_segment_length,
-    )
+    # Regenerate partitions until no single domino has top == bottom
+    # (a self-solving domino makes the puzzle trivial)
+    for _ in range(200):
+        top_lengths = generate_partition(
+            part_count=array_length,
+            total_length=string_length,
+            min_segment_length=min_segment_length,
+            max_segment_length=max_segment_length,
+        )
+        bottom_lengths = generate_partition(
+            part_count=array_length,
+            total_length=string_length,
+            min_segment_length=min_segment_length,
+            max_segment_length=max_segment_length,
+        )
 
-    top_segments = slice_string_by_lengths(source_string, top_lengths)
-    bottom_segments = slice_string_by_lengths(source_string, bottom_lengths)
+        top_segments = slice_string_by_lengths(source_string, top_lengths)
+        bottom_segments = slice_string_by_lengths(source_string, bottom_lengths)
+
+        if all(top_segments[i] != bottom_segments[i] for i in range(array_length)):
+            break
 
     dominoes = [
         Domino(
