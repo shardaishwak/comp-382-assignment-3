@@ -9,6 +9,7 @@ import OptionsList from "@/components/main-menu/options-list"
 import OptionsDropArea from "@/components/main-menu/options-drop-area"
 import type { GameOptions } from "./lib/types"
 import { EMPTY_OPTIONS } from "./lib/constants"
+import { socket } from "./lib/socket"
 
 export default function Page() {
   const [joinInput, setJoinInput] = useState<string>("")
@@ -25,8 +26,17 @@ export default function Page() {
   const handleStart = () => {
     if (selectedOptions.players === "players-1") {
       router.push("/single")
-    } else {
-      router.push("/multiplayer")
+      return
+    } 
+    if (selectedOptions.multiplayer === "multiplayer-1") { //join room
+      router.push(`/multiplayer?room=${encodeURIComponent(joinInput)}`)
+      return
+    }
+    if (selectedOptions.multiplayer === "multiplayer-2") { //host room
+      socket.once("mp_room_created", ({ roomId }: { roomId: string }) => {
+        router.push(`/multiplayer?room=${roomId}`)
+      })
+      socket.emit("mp_create")
     }
   }
 
@@ -38,6 +48,7 @@ export default function Page() {
 
   const isStartDisabled =
     selectedOptions.players === "" ||
+    (selectedOptions.multiplayer === "multiplayer-1" && !joinInput.trim()) || //disable join button if no room code
     (selectedOptions.multiplayer !== "multiplayer-1" && selectedOptions.difficulty === "")
 
   return (
