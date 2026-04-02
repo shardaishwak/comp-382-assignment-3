@@ -1,10 +1,17 @@
-# comp-382-assignment-3
+# COMP-382-Assignment-3
 
 
 ## Prerequisites
 
 - Python 3.11
 - Node.JS 21+: Preferred 22
+
+## Game State Manager
+The game state manager (`backend/app/game/pcp_game_state.py`) is the single
+source of truth for all PCP game logic. It tracks the domino set, the player's
+placed sequence, and computes `validNextIds`, `isDeadend`, and `prefixMatch`
+after every move. It exposes a `snapshot()` method that the socket layer emits
+directly to the frontend.
 
 ## Backend set-up
 
