@@ -3,9 +3,12 @@ import { useState } from "react"
 import Button from "./button"
 import soundEffect from "@/app/lib/sound"
 
-export default function OptionsButton() {
+export default function OptionsButton({
+  onRequestHints,
+}: {
+  onRequestHints?: () => void
+}) {
   const [open, setOpen] = useState<boolean>(false)
-  const [hint, setHint] = useState<boolean>(false)
 
   return (
     <div className="relative">
@@ -15,10 +18,20 @@ export default function OptionsButton() {
       </Button>
       {open && (
         <ul className="z-10 absolute top-12 right-0 bg-background border border-border-light rounded-lg divide-y divide-border-normal text-sm">
-          <li className="px-4 py-2 flex gap-3 items-center">
-            <input onChange={() => { soundEffect.tick(); setHint(!hint) }} className="accent-[#447d8a]" type="checkbox" checked={hint} />
-            Hints
-          </li>
+          {onRequestHints && (
+            <li className="px-4 py-2">
+              <button
+                onClick={() => {
+                  soundEffect.tick()
+                  onRequestHints()
+                  setOpen(false)
+                }}
+                className="hover:text-gray-300 duration-150"
+              >
+                Get Hints
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </div>

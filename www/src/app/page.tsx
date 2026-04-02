@@ -9,7 +9,6 @@ import OptionsList from "@/components/main-menu/options-list"
 import OptionsDropArea from "@/components/main-menu/options-drop-area"
 import type { GameOptions } from "./lib/types"
 import { EMPTY_OPTIONS } from "./lib/constants"
-import { socket } from "./lib/socket"
 
 export default function Page() {
   const [joinInput, setJoinInput] = useState<string>("")
@@ -23,20 +22,28 @@ export default function Page() {
   const getOptionValue = (sourceId: string): string | boolean =>
     sourceId === "hints" || sourceId === "timer" ? true : sourceId
 
+  const difficultyToLevel = (d: string): string => {
+    switch (d) {
+      case "difficulty-1": return "easy"
+      case "difficulty-2": return "medium"
+      case "difficulty-3": return "hard"
+      default: return "medium"
+    }
+  }
+
   const handleStart = () => {
+    const level = difficultyToLevel(selectedOptions.difficulty)
+
     if (selectedOptions.players === "players-1") {
-      router.push("/single")
+      router.push(`/single?difficulty=${level}`)
       return
-    } 
+    }
     if (selectedOptions.multiplayer === "multiplayer-1") { //join room
       router.push(`/multiplayer?room=${encodeURIComponent(joinInput)}`)
       return
     }
     if (selectedOptions.multiplayer === "multiplayer-2") { //host room
-      socket.once("mp_room_created", ({ roomId }: { roomId: string }) => {
-        router.push(`/multiplayer?room=${roomId}`)
-      })
-      socket.emit("mp_create")
+      router.push(`/multiplayer?mode=host&difficulty=${level}`)
     }
   }
 

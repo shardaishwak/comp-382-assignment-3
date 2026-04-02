@@ -173,7 +173,7 @@ def _opponent_sid(room_id: str, my_sid: str):
 def _emit_opponent_update(room_id: str, my_sid: str, game: PCPGameState, moves: int):
     opp = _opponent_sid(room_id, my_sid)
     if opp:
-        emit(
+        socketio.emit(
             "opponent_update",
             {
                 "opponentId": my_sid,
@@ -359,14 +359,17 @@ def handle_place_domino(data):
     sid = request.sid
     room_id = data.get("roomId")
     domino_id = data.get("dominoId")
+    print(f"[place_domino] sid={sid}, room={room_id}, domino_id={domino_id}, valid={room_id in rooms}")
 
     room = rooms.get(room_id)
     if not room or sid not in room["players"]:
+        print(f"[place_domino] REJECTED: room={room is not None}, sid_in_players={room and sid in room['players']}")
         emit("error", {"message": "Invalid room or player."})
-        return
+        return {"error": "Invalid room or player."}
     if room["status"] != "playing":
+        print(f"[place_domino] REJECTED: status={room['status']}")
         emit("error", {"message": "Game is not active."})
-        return
+        return {"error": "Game is not active."}
 
     player = room["players"][sid]
     game = player["game"]
@@ -374,12 +377,15 @@ def handle_place_domino(data):
     try:
         game.place_domino(domino_id)
     except (ValueError, RuntimeError) as e:
+        print(f"[place_domino] REJECTED by game: {e}")
         emit("error", {"message": str(e)})
-        return
+        return {"error": str(e)}
 
     player["moves"] += 1
     result = _move_result(game, player["moves"])
-    emit("move_result", result)
+    print(f"[place_domino] OK: moves={player['moves']}, validNext={result['validNextIds']}")
+    _emit_opponent_update(room_id, sid, game, player["moves"])
+    return result
 
     _emit_opponent_update(room_id, sid, game, player["moves"])
 
@@ -407,7 +413,7 @@ def handle_undo_move(data):
     room = rooms.get(room_id)
     if not room or sid not in room["players"]:
         emit("error", {"message": "Invalid room or player."})
-        return
+        return {"error": "Invalid room or player."}
 
     player = room["players"][sid]
     game = player["game"]
@@ -415,12 +421,13 @@ def handle_undo_move(data):
 
     if removed is None:
         emit("error", {"message": "Nothing to undo."})
-        return
+        return {"error": "Nothing to undo."}
 
     player["moves"] += 1
     result = _move_result(game, player["moves"])
     emit("move_result", result)
     _emit_opponent_update(room_id, sid, game, player["moves"])
+    return result
 
 
 @socketio.on("reset_sequence")
@@ -431,10 +438,10 @@ def handle_reset_sequence(data):
     room = rooms.get(room_id)
     if not room or sid not in room["players"]:
         emit("error", {"message": "Invalid room or player."})
-        return
+        return {"error": "Invalid room or player."}
     if room["status"] != "playing":
         emit("error", {"message": "Game is not active."})
-        return
+        return {"error": "Game is not active."}
 
     player = room["players"][sid]
     game = player["game"]
@@ -443,6 +450,7 @@ def handle_reset_sequence(data):
     result = _move_result(game, player["moves"])
     emit("move_result", result)
     _emit_opponent_update(room_id, sid, game, player["moves"])
+    return result
 
 
 @socketio.on("request_hints")

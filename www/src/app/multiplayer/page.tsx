@@ -1,176 +1,169 @@
 "use client"
+
 import { useRouter, useSearchParams } from "next/navigation"
-import { useCallback, useState, Suspense, useMemo, useRef, useEffect } from "react"
-import { nanoid } from "nanoid"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { DragDropProvider } from "@dnd-kit/react"
 import { isSortable } from "@dnd-kit/react/sortable"
 
-import type { Domino } from "../lib/types"
-import { socket } from "../lib/socket"
+import type { Domino, LevelId } from "../lib/types"
+import { useGameSocket } from "../hooks/useGameSocket"
 import soundEffect from "../lib/sound"
 import MenuBar from "@/components/menu-bar/menu-bar"
 import ProgressBar from "@/components/progress-bar"
 import TrayArea from "@/components/tray-area"
 import WorkingArea from "@/components/working-area"
 import ChainView from "@/components/chain-view"
-import { computeScores } from "../lib/scoring"
-
-/*
-TAILWIND CSS QUICK CHEATSHEET
-https://nerdcave.com/tailwind-cheat-sheet
-*/
+import GameOverModal from "@/components/game-over-modal"
 
 function MultiplayerContent() {
   const router = useRouter()
-
   const searchParams = useSearchParams()
+  const mode = searchParams.get("mode") // "host" or null
   const roomCode = searchParams.get("room")?.trim() ?? ""
+  const difficulty = (searchParams.get("difficulty") || "medium") as LevelId
 
-  const tray: Domino[] = [
-    { id: 0, top: ["R", "G", "B"], bottom: ["R"] },
-    { id: 1, top: ["G", "B"], bottom: ["G", "B"] },
-    { id: 2, top: ["B", "B", "R"], bottom: ["G", "R"] },
-    { id: 3, top: ["R", "R"], bottom: ["R", "B"] },
-    { id: 4, top: ["G"], bottom: ["B"] },
-    { id: 5, top: ["B", "B"], bottom: ["B", "G"] }
-  ]
-  const serializeWorking = useCallback(
-    (w: (Domino & { placementId: string })[]) =>
-      w.map((x) => ({ placementId: x.placementId, dominoId: x.id })),
-    []
-  )
-
-  const payloadToDomino = useCallback(
-    (placements: { placementId: string; dominoId: number }[]): (Domino & { placementId: string })[] =>
-      placements.flatMap((p) => {
-        const d = tray.find((t) => t.id === p.dominoId)
-        if (!d) return []
-        return [{ ...d, placementId: p.placementId }]
-      }),
-    []
-  )
-
-  const syncMpWorkingToServer = useCallback(
-    (rows: (Domino & { placementId: string })[]) => {
-      if (!roomCode) return
-      socket.emit("mp_set_working", {
-        roomId: roomCode.toUpperCase(),
-        placements: serializeWorking(rows),
-      })
-    },
-    [roomCode, serializeWorking]
-  )
-
-  const [working, setWorking] = useState<(Domino & { placementId: string })[]>([])
+  const game = useGameSocket()
+  const hasInitialized = useRef(false)
+  const prevSolved = useRef(false)
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
-  const scores = useMemo(() => computeScores(working), [working])
-  const prevScoreTotal = useRef(0);
 
   useEffect(() => {
-    const total = scores.overallMatch;
-    if (total === 100 && prevScoreTotal.current < 100) soundEffect.match();
-    prevScoreTotal.current = total;
-  }, [scores])
+    if (!game.isConnected || hasInitialized.current) return
+    hasInitialized.current = true
 
-  useEffect(() => {
-    if (!roomCode) {
+    if (mode === "host") {
+      game.createRoom("Player 1", difficulty)
+    } else if (roomCode) {
+      game.joinRoom(roomCode, "Player 2")
+    } else {
       router.replace("/")
     }
-  }, [roomCode, router])
+  }, [game.isConnected, mode, roomCode, difficulty, router, game.createRoom, game.joinRoom])
 
   useEffect(() => {
-    if (!roomCode) return
-    const code = roomCode.toUpperCase()
-
-    const onWorkingState = (p: {
-      roomId: string
-      placements: { placementId: string; dominoId: number }[]
-    }) => {
-      if (p.roomId !== code) return
-      setWorking(payloadToDomino(p.placements))
+    if (game.isSolved && !prevSolved.current) {
+      soundEffect.match()
     }
+    prevSolved.current = game.isSolved
+  }, [game.isSolved])
 
-    socket.on("mp_working_state", onWorkingState)
-    socket.emit("mp_join", { roomId: code })
+  if (!mode && !roomCode) return null
 
-    return () => {
-      socket.off("mp_working_state", onWorkingState)
-    }
-  }, [roomCode, payloadToDomino])
-
-  if (!roomCode) {
-    return null
-  }
+  const maxLen = Math.max(game.topString.length, game.bottomString.length, 1)
+  const progress = game.isSolved ? 100 : Math.round((game.prefixMatch / maxLen) * 100)
 
   return (
     <div className="h-screen bg-background">
-      {/* Top menu bar, this will need more work....*/}
-      <MenuBar p1="Player 1" p2="Player 2" time={60000} numMoves={0} />
+      <MenuBar
+        p1="Player 1"
+        p2={game.opponentName || "Waiting..."}
+        time={game.timer * 1000}
+        numMoves={game.moves}
+        onUndo={game.status === "playing" ? game.undoMove : undefined}
+        onReset={game.status === "playing" ? game.resetSequence : undefined}
+        onRequestHints={game.status === "playing" ? game.requestHints : undefined}
+      />
 
       <main className="w-full flex-1 px-8 py-8 md:px-16 md:py-16 flex flex-col items-center gap-4 md:gap-8">
-        {/* Show current room code */}
-        <p className="text-sm text-gray-500">
-          Room: <span className="text-gray-300">{roomCode}</span>
-        </p>
+        {game.roomId && (
+          <p className="text-sm text-gray-500">
+            Room: <span className="text-gray-300 font-mono">{game.roomId}</span>
+          </p>
+        )}
 
-        {/* Drag and drop system, we will need to make an updater or something to render multiplayer */}
-        <DragDropProvider
-          onDragStart={(event) => {
-            // When dragging starts, store selected domino
-            if (event.operation.source) {
-              if (!isSortable(event.operation.source)) {
-                setSelectedTrayDomino(tray[event.operation.source.id as number])
-              }
-            }
-          }}
-          onDragEnd={(event) => {
-            if (event.canceled) return
+        {game.status === "waiting" && (
+          <div className="text-gray-400 text-center">
+            <p>Waiting for opponent to join...</p>
+            {game.roomId && (
+              <p className="mt-2 text-lg font-mono text-gray-200">
+                Share this room code: {game.roomId}
+              </p>
+            )}
+          </div>
+        )}
 
-            // If dropped in working area from tray add domino and notify socket
-            if (event.operation.target?.id == "working-area") {
-              const src = event.operation.source
-              if (src && !isSortable(src)) {
-                const sourceId = src.id as number
-                setWorking((prev) => {
-                  const next = [
-                    ...prev,
-                    { ...tray[sourceId], placementId: nanoid() },
-                  ]
-                  soundEffect.place()
-                  syncMpWorkingToServer(next)
-                  return next
-                })
-              }
-            }
+        {game.status === "playing" && (
+          <>
+            {game.opponentName && (
+              <div className="flex gap-6 text-sm text-gray-400">
+                <span>Opponent moves: {game.opponentMoves}</span>
+                <span>Opponent prefix match: {game.opponentPrefixMatch}</span>
+              </div>
+            )}
 
-            // Clear selection after drop
-            setSelectedTrayDomino(undefined)
-          }}
-        >
-          {/* Bottom tray */}
-          <TrayArea dominos={tray} />
+            <DragDropProvider
+              onDragStart={(event) => {
+                if (event.operation.source && !isSortable(event.operation.source)) {
+                  const dominoId = event.operation.source.id as number
+                  const domino = game.instance.find((d) => d.id === dominoId)
+                  setSelectedTrayDomino(domino)
+                }
+              }}
+              onDragEnd={(event) => {
+                if (event.canceled) return
+                if (event.operation.target?.id === "working-area") {
+                  const src = event.operation.source
+                  if (src && !isSortable(src)) {
+                    game.placeDomino(src.id as number)
+                    soundEffect.place()
+                  }
+                }
+                setSelectedTrayDomino(undefined)
+              }}
+            >
+              <TrayArea dominos={game.instance} validNextIds={game.validNextIds} onDominoClick={(id) => { game.placeDomino(id); soundEffect.place() }} />
+              <WorkingArea dominos={game.sequence} selectedTrayDomino={selectedTrayDomino} />
+            </DragDropProvider>
 
-          {/* Main board */}
-          <WorkingArea
-            dominos={working}
-            setDominos={setWorking}
-            selectedTrayDomino={selectedTrayDomino}
-            onMpWorkingChange={(next) => syncMpWorkingToServer(next)}
-          />
-        </DragDropProvider>
+            <ChainView dominos={game.sequence} />
+            <ProgressBar progress={progress} />
 
-        <ChainView dominos={working} />
-        <ProgressBar progress={scores.overallMatch} />
+            {game.isDeadEnd && (
+              <p className="text-yellow-400 text-sm">
+                Dead end — no valid moves. Try undoing or resetting.
+              </p>
+            )}
+          </>
+        )}
+
+        {game.status === "idle" && (
+          <p className="text-gray-400">Connecting to server...</p>
+        )}
+
+        {game.error && (
+          <button className="text-red-400 text-sm" onClick={game.clearError}>
+            {game.error} (click to dismiss)
+          </button>
+        )}
+
+        {game.hints.length > 0 && (
+          <div className="w-full max-w-md text-sm text-gray-400 border border-border-normal rounded-lg p-3">
+            <p className="font-semibold mb-2">Hints:</p>
+            {game.hints.map((h, i) => (
+              <p key={i} className="mb-1">
+                {h.dominoId >= 0 ? `Domino ${h.dominoId}: ` : ""}
+                {h.explanation}
+              </p>
+            ))}
+          </div>
+        )}
       </main>
+
+      {game.status === "finished" && (
+        <GameOverModal
+          isSolved={game.isSolved}
+          winner={game.winner}
+          prefixMatch={game.prefixMatch}
+          moves={game.moves}
+        />
+      )}
     </div>
   )
 }
 
-// This is the page content. It renders this component when the page is loaded. suspend tells us to wait for it to load fully
-export default function MultiplayerPage() { 
+export default function MultiplayerPage() {
   return (
     <Suspense fallback={<p>Loading...</p>}>
-      {/* this is a nice little trick i learned before... just in case the page takes a while to load*/}
       <MultiplayerContent />
     </Suspense>
   )
