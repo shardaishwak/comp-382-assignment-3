@@ -5,7 +5,7 @@ from typing import Optional
 COLORS = ["R", "G", "B"]
 MINIMUM_SEQUENCE_LENGTH = 1
 MAXIMUM_SEQUENCE_LENGTH = 4
-DEFAULT_SIZE = 6\
+DEFAULT_SIZE = 6
 
 class Domino:
     def __init__(self, id: int, top: list, bottom: list):

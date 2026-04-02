@@ -252,6 +252,7 @@ def handle_create_room(data):
     sid = request.sid
     player_name = data.get("playerName", "Player")
     level_id = data.get("level", "medium")
+    single_player = data.get("singlePlayer", False)
     room_id = _generate_room_id()
 
     level_cfg = LEVEL_CONFIG.get(level_id)
@@ -276,7 +277,7 @@ def handle_create_room(data):
         "dominoes": structured.dominoes,
         "instance_dicts": instance_dicts,
         "level": level_cfg,
-        "status": "waiting",
+        "status": "playing" if single_player else "waiting",
         "timer": level_cfg["time"],
         "timer_thread": None,
         "winner": None,
@@ -289,6 +290,20 @@ def handle_create_room(data):
         "level": level_cfg,
         "instance": instance_dicts,
     })
+
+    # Single player: auto-start immediately
+    if single_player:
+        players_dict = {
+            sid: _player_state_dict(sid, rooms[room_id]["players"][sid], game)
+        }
+        emit("game_start", {
+            "roomId": room_id,
+            "level": level_cfg,
+            "instance": instance_dicts,
+            "players": players_dict,
+            "timer": level_cfg["time"],
+        })
+        _start_timer(room_id)
 
 
 @socketio.on("join_room")
@@ -408,7 +423,27 @@ def handle_undo_move(data):
     _emit_opponent_update(room_id, sid, game, player["moves"])
 
 
-# TODO: Do we need reset sequence?
+@socketio.on("reset_sequence")
+def handle_reset_sequence(data):
+    sid = request.sid
+    room_id = data.get("roomId")
+
+    room = rooms.get(room_id)
+    if not room or sid not in room["players"]:
+        emit("error", {"message": "Invalid room or player."})
+        return
+    if room["status"] != "playing":
+        emit("error", {"message": "Game is not active."})
+        return
+
+    player = room["players"][sid]
+    game = player["game"]
+    game.reset()
+    player["moves"] += 1
+    result = _move_result(game, player["moves"])
+    emit("move_result", result)
+    _emit_opponent_update(room_id, sid, game, player["moves"])
+
 
 @socketio.on("request_hints")
 def handle_request_hints(data):
