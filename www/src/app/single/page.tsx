@@ -18,15 +18,19 @@ import GameOverModal from "@/components/game-over-modal"
 function SinglePlayerContent() {
   const searchParams = useSearchParams()
   const difficulty = (searchParams.get("difficulty") || "medium") as LevelId
+  const showTimer = searchParams.get("timer") === "1"
+  const showHints = searchParams.get("hints") === "1"
+  const showUndo = searchParams.get("undo") === "1"
   const game = useGameSocket()
   const hasCreated = useRef(false)
   const prevSolved = useRef(false)
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
+  const playerName = typeof window !== "undefined" ? (localStorage.getItem("playerName") || "Player 1") : "Player 1"
 
   useEffect(() => {
     if (game.isConnected && !hasCreated.current) {
       hasCreated.current = true
-      game.createRoom("Player 1", difficulty, true)
+      game.createRoom(playerName, difficulty, true, showTimer)
     }
   }, [game.isConnected, difficulty, game.createRoom])
 
@@ -43,13 +47,13 @@ function SinglePlayerContent() {
   return (
     <div className="h-screen bg-background">
       <MenuBar
-        p1="Player 1"
+        p1={playerName}
         p2=""
-        time={game.timer * 1000}
+        time={showTimer ? game.timer * 1000 : undefined}
         numMoves={game.moves}
-        onUndo={game.undoMove}
+        onUndo={showUndo ? game.undoMove : undefined}
         onReset={game.resetSequence}
-        onRequestHints={game.requestHints}
+        onRequestHints={showHints ? game.requestHints : undefined}
       />
       <main className="w-full flex-1 px-8 py-8 md:px-16 md:py-16 flex flex-col items-center gap-4 md:gap-8">
         {game.status === "playing" && (
@@ -73,7 +77,7 @@ function SinglePlayerContent() {
               setSelectedTrayDomino(undefined)
             }}
           >
-            <TrayArea dominos={game.instance} validNextIds={game.validNextIds} onDominoClick={(id) => { game.placeDomino(id); soundEffect.place() }} />
+            <TrayArea dominos={game.instance} validNextIds={showHints ? game.validNextIds : []} onDominoClick={(id) => { game.placeDomino(id); soundEffect.place() }} />
             <WorkingArea dominos={game.sequence} selectedTrayDomino={selectedTrayDomino} />
           </DragDropProvider>
         )}
@@ -116,7 +120,7 @@ function SinglePlayerContent() {
       {game.status === "finished" && (
         <GameOverModal
           isSolved={game.isSolved}
-          winner={game.isSolved ? { id: "you", name: "You" } : null}
+          winner={game.isSolved ? { id: "you", name: playerName } : null}
           prefixMatch={game.prefixMatch}
           moves={game.moves}
         />

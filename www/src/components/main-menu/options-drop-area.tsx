@@ -83,6 +83,9 @@ export default function OptionsDropArea({
         {display.timer && (
           <OptionDomino id="timer-placed" n={1} text="timer" opacity={isCurSelected("timer")} disabled />
         )}
+        {display.undo && (
+          <OptionDomino id="undo-placed" n={1} text="undo" opacity={isCurSelected("undo")} disabled />
+        )}
       </div>
     </div>
   )

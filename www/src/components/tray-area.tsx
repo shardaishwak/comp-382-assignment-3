@@ -5,10 +5,12 @@ export default function TrayArea({
   dominos,
   validNextIds = [],
   onDominoClick,
+  disabled = false,
 }: {
   dominos: DominoType[]
   validNextIds?: number[]
   onDominoClick?: (dominoId: number) => void
+  disabled?: boolean
 }) {
   return (
     <div className="w-full flex flex-col">
@@ -24,6 +26,7 @@ export default function TrayArea({
             bottom={domino.bottom}
             isHint={validNextIds.includes(domino.id)}
             onClick={onDominoClick ? () => onDominoClick(domino.id) : undefined}
+            disabled={disabled}
           />
         ))}
       </div>

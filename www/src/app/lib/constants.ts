@@ -20,7 +20,8 @@ export const OPTIONS = {
   ],
   optional: [
     { id: "hints", n: 1, text: "hints" },
-    { id: "timer", n: 1, text: "timer" }
+    { id: "timer", n: 1, text: "timer" },
+    { id: "undo", n: 1, text: "undo" }
   ]
 }
 
@@ -29,5 +30,6 @@ export const EMPTY_OPTIONS = {
   difficulty: "",
   multiplayer: "",
   hints: false,
-  timer: false
+  timer: false,
+  undo: false
 }

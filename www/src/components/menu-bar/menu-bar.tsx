@@ -16,7 +16,7 @@ export default function MenuBar({
 }: {
   p1: string
   p2: string
-  time: number
+  time?: number
   numMoves: number
   onUndo?: () => void
   onReset?: () => void
@@ -29,7 +29,7 @@ export default function MenuBar({
     return `${minutes}:${seconds.toString().padStart(2, "0")}`
   }
 
-  const formattedTime = formatTime(time)
+  const formattedTime = time != null ? formatTime(time) : null
   const router = useRouter()
 
   return (
@@ -58,15 +58,17 @@ export default function MenuBar({
               <p className="hidden md:inline">Reset</p>
             </Button>
           )}
-          <div className="hidden md:inline text-lg font-semibold">{formattedTime}</div>
+          {formattedTime && <div className="hidden md:inline text-lg font-semibold">{formattedTime}</div>}
           <div className="hidden md:inline font-semibold whitespace-nowrap">Moves: {numMoves}</div>
           <OptionsButton onRequestHints={onRequestHints} />
         </div>
       </div>
-      <div className="md:hidden float-right rounded-lg border border-border-normal mt-8 py-2 font-semibold flex flex-col gap-1 divide-y divide-border-muted">
-        <p className="text-right px-4 pb-1">{formattedTime}</p>
-        <p className="text-right px-4">Moves: {numMoves}</p>
-      </div>
+      {(formattedTime || true) && (
+        <div className="md:hidden float-right rounded-lg border border-border-normal mt-8 py-2 font-semibold flex flex-col gap-1 divide-y divide-border-muted">
+          {formattedTime && <p className="text-right px-4 pb-1">{formattedTime}</p>}
+          <p className="text-right px-4">Moves: {numMoves}</p>
+        </div>
+      )}
     </div>
   )
 }

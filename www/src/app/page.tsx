@@ -1,6 +1,6 @@
 "use client"
 import soundEffect from "./lib/sound"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { DragDropProvider } from "@dnd-kit/react"
 import { ArrowRightIcon, ArrowUturnLeftIcon } from "@heroicons/react/16/solid"
@@ -11,16 +11,29 @@ import type { GameOptions } from "./lib/types"
 import { EMPTY_OPTIONS } from "./lib/constants"
 
 export default function Page() {
+  const [playerName, setPlayerName] = useState("")
   const [joinInput, setJoinInput] = useState<string>("")
   const [selectedOptions, setSelectedOptions] = useState<GameOptions>(EMPTY_OPTIONS)
   const [curSelected, setCurSelected] = useState<Partial<GameOptions>>({})
   const router = useRouter()
 
+  useEffect(() => {
+    const saved = localStorage.getItem("playerName") || ""
+    setPlayerName(saved)
+  }, [])
+
+  const savePlayerName = (name: string) => {
+    setPlayerName(name)
+    localStorage.setItem("playerName", name)
+  }
+
+  const BOOL_OPTIONS = new Set(["hints", "timer", "undo"])
+
   const getOptionKey = (sourceId: string) =>
-    sourceId === "hints" || sourceId === "timer" ? sourceId : sourceId.split("-")[0]
+    BOOL_OPTIONS.has(sourceId) ? sourceId : sourceId.split("-")[0]
 
   const getOptionValue = (sourceId: string): string | boolean =>
-    sourceId === "hints" || sourceId === "timer" ? true : sourceId
+    BOOL_OPTIONS.has(sourceId) ? true : sourceId
 
   const difficultyToLevel = (d: string): string => {
     switch (d) {
@@ -33,17 +46,22 @@ export default function Page() {
 
   const handleStart = () => {
     const level = difficultyToLevel(selectedOptions.difficulty)
+    const opts = new URLSearchParams()
+    if (selectedOptions.timer) opts.set("timer", "1")
+    if (selectedOptions.hints) opts.set("hints", "1")
+    if (selectedOptions.undo) opts.set("undo", "1")
+    const optStr = opts.toString() ? `&${opts.toString()}` : ""
 
     if (selectedOptions.players === "players-1") {
-      router.push(`/single?difficulty=${level}`)
+      router.push(`/single?difficulty=${level}${optStr}`)
       return
     }
     if (selectedOptions.multiplayer === "multiplayer-1") { //join room
-      router.push(`/multiplayer?room=${encodeURIComponent(joinInput)}`)
+      router.push(`/multiplayer?room=${encodeURIComponent(joinInput)}${optStr}`)
       return
     }
     if (selectedOptions.multiplayer === "multiplayer-2") { //host room
-      router.push(`/multiplayer?mode=host&difficulty=${level}`)
+      router.push(`/multiplayer?mode=host&difficulty=${level}${optStr}`)
     }
   }
 
@@ -51,9 +69,11 @@ export default function Page() {
     selectedOptions.players === "" &&
     selectedOptions.difficulty === "" &&
     !selectedOptions.hints &&
-    !selectedOptions.timer
+    !selectedOptions.timer &&
+    !selectedOptions.undo
 
   const isStartDisabled =
+    !playerName.trim() ||
     selectedOptions.players === "" ||
     (selectedOptions.multiplayer === "multiplayer-1" && !joinInput.trim()) || //disable join button if no room code
     (selectedOptions.multiplayer !== "multiplayer-1" && selectedOptions.difficulty === "")
@@ -65,6 +85,15 @@ export default function Page() {
         <div className="h-16 bg-background grid grid-cols-2">
           <div className="flex items-center gap-4 md:gap-6">
             <h1 className="font-bold text-gray-500 text-base whitespace-nowrap">PCP Domino Game</h1>
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <label className="text-sm text-gray-500 hidden md:inline">Name:</label>
+            <input
+              value={playerName}
+              onChange={(e) => savePlayerName(e.target.value)}
+              placeholder="Enter your name"
+              className="py-1 px-3 rounded-lg border border-border-normal text-sm text-gray-300 bg-transparent w-40 focus:outline-none focus:border-border-light"
+            />
           </div>
         </div>
       </div>

@@ -32,6 +32,8 @@ export function useGameSocket() {
   const [opponentName, setOpponentName] = useState("")
   const [opponentMoves, setOpponentMoves] = useState(0)
   const [opponentPrefixMatch, setOpponentPrefixMatch] = useState(0)
+  const [currentTurn, setCurrentTurn] = useState<string | null>(null)
+  const [gameOptions, setGameOptions] = useState<{ showHints: boolean; showUndo: boolean; useTimer: boolean }>({ showHints: false, showUndo: false, useTimer: true })
 
   const roomIdRef = useRef<string | null>(null)
 
@@ -213,6 +215,7 @@ export function useGameSocket() {
             setLevel(result.level)
             setTimer(result.timer)
             setValidNextIds(result.instance.map((d: Domino) => d.id))
+            if (result.currentTurn) setCurrentTurn(result.currentTurn)
             const myId = socket.id
             for (const [sid, player] of Object.entries(result.players as Record<string, { sid: string; name: string }>)) {
               if (sid !== myId) {
@@ -227,7 +230,7 @@ export function useGameSocket() {
     return () => clearInterval(interval)
   }, [status])
 
-  // Poll shared game state to sync both players' UIs
+  // Poll shared game state to sync both players' UIs + timer
   useEffect(() => {
     if (status !== "playing" || !roomIdRef.current) return
     const interval = setInterval(() => {
@@ -236,8 +239,16 @@ export function useGameSocket() {
         .then((result) => {
           if (result.error) return
           applyMoveResult(result)
+          if (result.timer !== undefined) setTimer(result.timer)
+          if (result.currentTurn) setCurrentTurn(result.currentTurn)
           if (result.status === "finished" || result.isSolved) {
             setStatus("finished")
+            if (result.winner) {
+              setWinner({
+                id: result.winner.id,
+                name: result.winner.id === socket.id ? "You" : result.winner.name,
+              })
+            }
           }
         })
         .catch(() => {})
@@ -245,11 +256,12 @@ export function useGameSocket() {
     return () => clearInterval(interval)
   }, [status, applyMoveResult])
 
-  const createRoom = useCallback((playerName: string, levelId: LevelId, singlePlayer = false) => {
+  const createRoom = useCallback((playerName: string, levelId: LevelId, singlePlayer = false, useTimer = true, showHints = false, showUndo = false) => {
+    setGameOptions({ showHints, showUndo, useTimer })
     fetch("http://localhost:5001/api/create_room", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sid: socket.id, playerName, level: levelId, singlePlayer }),
+      body: JSON.stringify({ sid: socket.id, playerName, level: levelId, singlePlayer, useTimer, showHints, showUndo }),
     })
       .then((r) => r.json())
       .then((result) => {
@@ -281,6 +293,12 @@ export function useGameSocket() {
         setTimer(result.timer)
         setValidNextIds(result.instance.map((d: Domino) => d.id))
         setStatus(result.status === "playing" ? "playing" : "waiting")
+        if (result.currentTurn) setCurrentTurn(result.currentTurn)
+        setGameOptions({
+          showHints: result.showHints ?? false,
+          showUndo: result.showUndo ?? false,
+          useTimer: result.useTimer ?? true,
+        })
         const myId = socket.id
         for (const [sid, player] of Object.entries(result.players as Record<string, { sid: string; name: string }>)) {
           if (sid !== myId) {
@@ -304,6 +322,7 @@ export function useGameSocket() {
         if (result.error) setError(result.error)
         else {
           applyMoveResult(result)
+          if (result.currentTurn) setCurrentTurn(result.currentTurn)
           if (result.isSolved) {
             setStatus("finished")
             setWinner({ id: socket.id ?? "", name: "You" })
@@ -323,7 +342,10 @@ export function useGameSocket() {
       .then((r) => r.json())
       .then((result) => {
         if (result.error) setError(result.error)
-        else applyMoveResult(result)
+        else {
+          applyMoveResult(result)
+          if (result.currentTurn) setCurrentTurn(result.currentTurn)
+        }
       })
       .catch((e) => console.error("[undoMove] fetch error", e))
   }, [applyMoveResult])
@@ -338,7 +360,10 @@ export function useGameSocket() {
       .then((r) => r.json())
       .then((result) => {
         if (result.error) setError(result.error)
-        else applyMoveResult(result)
+        else {
+          applyMoveResult(result)
+          if (result.currentTurn) setCurrentTurn(result.currentTurn)
+        }
       })
       .catch((e) => console.error("[resetSequence] fetch error", e))
   }, [applyMoveResult])
@@ -357,6 +382,8 @@ export function useGameSocket() {
   }, [])
 
   const clearError = useCallback(() => setError(null), [])
+
+  const isMyTurn = currentTurn === null || currentTurn === socket.id
 
   return {
     isConnected,
@@ -380,6 +407,9 @@ export function useGameSocket() {
     opponentName,
     opponentMoves,
     opponentPrefixMatch,
+    currentTurn,
+    isMyTurn,
+    gameOptions,
     createRoom,
     joinRoom,
     placeDomino,

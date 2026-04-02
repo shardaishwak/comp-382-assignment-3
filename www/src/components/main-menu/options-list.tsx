@@ -4,7 +4,7 @@ import { OPTIONS } from "@/app/lib/constants"
 export default function OptionsList({
   selectedOptions
 }: {
-  selectedOptions: { players: string; difficulty: string; multiplayer: string; hints: boolean; timer: boolean }
+  selectedOptions: { players: string; difficulty: string; multiplayer: string; hints: boolean; timer: boolean; undo: boolean }
 }) {
   const { players, multiplayer, difficulty } = selectedOptions
 

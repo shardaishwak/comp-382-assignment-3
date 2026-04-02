@@ -31,6 +31,9 @@ def create_app():
         player_name = body.get("playerName", "Player")
         level_id = body.get("level", "medium")
         single_player = body.get("singlePlayer", False)
+        use_timer = body.get("useTimer", True)
+        show_hints = body.get("showHints", False)
+        show_undo = body.get("showUndo", False)
 
         # If this sid already has a room, return it (idempotent for React Strict Mode)
         existing_room_id = sid_to_room.get(sid)
@@ -66,16 +69,21 @@ def create_app():
             "instance_dicts": instance_dicts,
             "level": level_cfg,
             "status": "playing" if single_player else "waiting",
-            "timer": level_cfg["time"],
+            "timer": level_cfg["time"] if use_timer else 0,
+            "use_timer": use_timer,
             "timer_thread": None,
             "winner": None,
+            "turn_order": [sid] if single_player else [],
+            "current_turn_index": 0,
+            "show_hints": show_hints,
+            "show_undo": show_undo,
         }
         sid_to_room[sid] = room_id
 
         # Join socket.io room for broadcast events (timer, opponent updates)
         socketio.server.enter_room(sid, room_id, namespace='/')
 
-        if single_player:
+        if single_player and use_timer:
             _start_timer(room_id)
 
         return jsonify({
@@ -83,7 +91,7 @@ def create_app():
             "level": level_cfg,
             "instance": instance_dicts,
             "status": "playing" if single_player else "waiting",
-            "timer": level_cfg["time"],
+            "timer": level_cfg["time"] if use_timer else 0,
         })
 
     @app.route("/api/join_room", methods=["POST"])
@@ -123,9 +131,14 @@ def create_app():
         # Auto-start when 2 players
         if len(room["players"]) >= 2:
             room["status"] = "playing"
-            _start_timer(room_id)
+            room["turn_order"] = list(room["players"].keys())  # host first
+            room["current_turn_index"] = 0
+            if room.get("use_timer", True):
+                _start_timer(room_id)
 
         players_dict = {s: {"sid": s, "name": p["name"]} for s, p in room["players"].items()}
+        turn_order = room.get("turn_order", [])
+        current_turn = turn_order[room.get("current_turn_index", 0)] if turn_order else None
         return jsonify({
             "roomId": room_id,
             "level": room["level"],
@@ -133,6 +146,10 @@ def create_app():
             "status": room["status"],
             "timer": room["timer"],
             "players": players_dict,
+            "currentTurn": current_turn,
+            "showHints": room.get("show_hints", False),
+            "showUndo": room.get("show_undo", False),
+            "useTimer": room.get("use_timer", True),
         })
 
     @app.route("/api/room_state/<room_id>", methods=["GET"])
@@ -141,6 +158,8 @@ def create_app():
         if not room:
             return jsonify({"error": "Room not found."}), 404
         players_dict = {s: {"sid": s, "name": p["name"]} for s, p in room["players"].items()}
+        turn_order = room.get("turn_order", [])
+        current_turn = turn_order[room.get("current_turn_index", 0)] if turn_order else None
         return jsonify({
             "roomId": room_id,
             "status": room["status"],
@@ -148,6 +167,10 @@ def create_app():
             "instance": room["instance_dicts"],
             "timer": room["timer"],
             "players": players_dict,
+            "currentTurn": current_turn,
+            "showHints": room.get("show_hints", False),
+            "showUndo": room.get("show_undo", False),
+            "useTimer": room.get("use_timer", True),
         })
 
     @app.route("/api/game_state/<room_id>", methods=["GET"])
@@ -158,6 +181,14 @@ def create_app():
         game = room["game"]
         result = _move_result(game, room.get("moves", 0))
         result["status"] = room["status"]
+        result["timer"] = room["timer"]
+        turn_order = room.get("turn_order", [])
+        result["currentTurn"] = turn_order[room.get("current_turn_index", 0)] if turn_order else None
+        winner_sid = room.get("winner")
+        if winner_sid and winner_sid in room["players"]:
+            result["winner"] = {"id": winner_sid, "name": room["players"][winner_sid]["name"]}
+        else:
+            result["winner"] = None
         return jsonify(result)
 
     @app.route("/api/place", methods=["POST"])
@@ -173,6 +204,13 @@ def create_app():
         if room["status"] != "playing":
             return jsonify({"error": "Game is not active."}), 400
 
+        # Turn validation (skip for single player)
+        turn_order = room.get("turn_order", [])
+        if len(turn_order) > 1:
+            current_turn = turn_order[room.get("current_turn_index", 0)]
+            if sid != current_turn:
+                return jsonify({"error": "Not your turn."}), 400
+
         game = room["game"]
         try:
             game.place_domino(domino_id)
@@ -180,7 +218,13 @@ def create_app():
             return jsonify({"error": str(e)}), 400
 
         room["moves"] = room.get("moves", 0) + 1
+
+        # Advance turn
+        if len(turn_order) > 1:
+            room["current_turn_index"] = (room.get("current_turn_index", 0) + 1) % len(turn_order)
+
         result = _move_result(game, room["moves"])
+        result["currentTurn"] = turn_order[room.get("current_turn_index", 0)] if turn_order else None
         _emit_opponent_update(room_id, sid, game, room["moves"])
 
         if game.is_solved:
@@ -205,6 +249,13 @@ def create_app():
         if not room or sid not in room["players"]:
             return jsonify({"error": "Invalid room or player."}), 400
 
+        # Turn validation (skip for single player)
+        turn_order = room.get("turn_order", [])
+        if len(turn_order) > 1:
+            current_turn = turn_order[room.get("current_turn_index", 0)]
+            if sid != current_turn:
+                return jsonify({"error": "Not your turn."}), 400
+
         game = room["game"]
         removed = game.undo()
         if removed is None:
@@ -212,6 +263,7 @@ def create_app():
 
         room["moves"] = room.get("moves", 0) + 1
         result = _move_result(game, room["moves"])
+        result["currentTurn"] = turn_order[room.get("current_turn_index", 0)] if turn_order else None
         _emit_opponent_update(room_id, sid, game, room["moves"])
         return jsonify(result)
 
@@ -227,10 +279,18 @@ def create_app():
         if room["status"] != "playing":
             return jsonify({"error": "Game is not active."}), 400
 
+        # Turn validation (skip for single player)
+        turn_order = room.get("turn_order", [])
+        if len(turn_order) > 1:
+            current_turn = turn_order[room.get("current_turn_index", 0)]
+            if sid != current_turn:
+                return jsonify({"error": "Not your turn."}), 400
+
         game = room["game"]
         game.reset()
         room["moves"] = room.get("moves", 0) + 1
         result = _move_result(game, room["moves"])
+        result["currentTurn"] = turn_order[room.get("current_turn_index", 0)] if turn_order else None
         _emit_opponent_update(room_id, sid, game, room["moves"])
         return jsonify(result)
 

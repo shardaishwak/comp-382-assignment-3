@@ -21,20 +21,29 @@ function MultiplayerContent() {
   const mode = searchParams.get("mode") // "host" or null
   const roomCode = searchParams.get("room")?.trim() ?? ""
   const difficulty = (searchParams.get("difficulty") || "medium") as LevelId
+  const urlTimer = searchParams.get("timer") === "1"
+  const urlHints = searchParams.get("hints") === "1"
+  const urlUndo = searchParams.get("undo") === "1"
 
   const game = useGameSocket()
+
+  // Host uses URL params; joiner gets options from the server (host's settings)
+  const showTimer = mode === "host" ? urlTimer : game.gameOptions.useTimer
+  const showHints = mode === "host" ? urlHints : game.gameOptions.showHints
+  const showUndo = mode === "host" ? urlUndo : game.gameOptions.showUndo
   const hasInitialized = useRef(false)
   const prevSolved = useRef(false)
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
+  const playerName = typeof window !== "undefined" ? (localStorage.getItem("playerName") || "Player") : "Player"
 
   useEffect(() => {
     if (!game.isConnected || hasInitialized.current) return
     hasInitialized.current = true
 
     if (mode === "host") {
-      game.createRoom("Player 1", difficulty)
+      game.createRoom(playerName, difficulty, false, urlTimer, urlHints, urlUndo)
     } else if (roomCode) {
-      game.joinRoom(roomCode, "Player 2")
+      game.joinRoom(roomCode, playerName)
     } else {
       router.replace("/")
     }
@@ -55,13 +64,13 @@ function MultiplayerContent() {
   return (
     <div className="h-screen bg-background">
       <MenuBar
-        p1="Player 1"
+        p1={playerName}
         p2={game.opponentName || "Waiting..."}
-        time={game.timer * 1000}
+        time={showTimer ? game.timer * 1000 : undefined}
         numMoves={game.moves}
-        onUndo={game.status === "playing" ? game.undoMove : undefined}
-        onReset={game.status === "playing" ? game.resetSequence : undefined}
-        onRequestHints={game.status === "playing" ? game.requestHints : undefined}
+        onUndo={showUndo && game.status === "playing" && game.isMyTurn ? game.undoMove : undefined}
+        onReset={game.status === "playing" && game.isMyTurn ? game.resetSequence : undefined}
+        onRequestHints={showHints && game.status === "playing" ? game.requestHints : undefined}
       />
 
       <main className="w-full flex-1 px-8 py-8 md:px-16 md:py-16 flex flex-col items-center gap-4 md:gap-8">
@@ -85,9 +94,14 @@ function MultiplayerContent() {
         {game.status === "playing" && (
           <>
             {game.opponentName && (
-              <div className="flex gap-6 text-sm text-gray-400">
-                <span>Opponent moves: {game.opponentMoves}</span>
-                <span>Opponent prefix match: {game.opponentPrefixMatch}</span>
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex gap-6 text-sm text-gray-400">
+                  <span>Opponent moves: {game.opponentMoves}</span>
+                  <span>Opponent prefix match: {game.opponentPrefixMatch}</span>
+                </div>
+                <p className={`text-sm font-semibold ${game.isMyTurn ? "text-green-400" : "text-yellow-400"}`}>
+                  {game.isMyTurn ? "Your turn" : `Waiting for ${game.opponentName}...`}
+                </p>
               </div>
             )}
 
@@ -100,7 +114,7 @@ function MultiplayerContent() {
                 }
               }}
               onDragEnd={(event) => {
-                if (event.canceled) return
+                if (event.canceled || !game.isMyTurn) return
                 if (event.operation.target?.id === "working-area") {
                   const src = event.operation.source
                   if (src && !isSortable(src)) {
@@ -111,7 +125,7 @@ function MultiplayerContent() {
                 setSelectedTrayDomino(undefined)
               }}
             >
-              <TrayArea dominos={game.instance} validNextIds={game.validNextIds} onDominoClick={(id) => { game.placeDomino(id); soundEffect.place() }} />
+              <TrayArea dominos={game.instance} validNextIds={showHints ? game.validNextIds : []} onDominoClick={(id) => { if (game.isMyTurn) { game.placeDomino(id); soundEffect.place() } }} disabled={!game.isMyTurn} />
               <WorkingArea dominos={game.sequence} selectedTrayDomino={selectedTrayDomino} />
             </DragDropProvider>
 
@@ -152,7 +166,7 @@ function MultiplayerContent() {
       {game.status === "finished" && (
         <GameOverModal
           isSolved={game.isSolved}
-          winner={game.winner}
+          winner={game.winner ? { ...game.winner, name: game.winner.name === "You" ? playerName : game.winner.name } : null}
           prefixMatch={game.prefixMatch}
           moves={game.moves}
         />
