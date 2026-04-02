@@ -66,3 +66,25 @@ cd www && npm run dev
 Then open the http://localhost:3000 in the browser
 
 NOTE: Replace `source venv/bin/activate` with `venv\Scripts\activate.bat` for windows.
+
+## Tests
+
+The `tests/test_socket_events.py` file validates that all backend socket event 
+payloads match the expected frontend TypeScript types.
+
+### Running the tests
+```bash
+cd backend
+source venv/bin/activate  # macOS
+venv\Scripts\activate.bat  # Windows
+pytest tests/test_socket_events.py
+```
+
+### What's covered
+- `create_room` → `room_created`: room ID, level shape, domino instance shape
+- `join_room` → `player_joined`, `game_start`: player state, timer, full payload shape
+- `place_domino` → `move_result`, `opponent_update`: sequence, strings, scoring
+- `undo_move` → `move_result`, `opponent_update`: undo behaviour and empty sequence errors
+- `request_hints` → `hint_update`: hint list and best hint shape
+- `leave_room` / disconnect → `player_left`: broadcast payload
+- Edge cases: invalid level, full room, case-insensitive room ID, default player name
