@@ -58,6 +58,64 @@ rooms: dict = {}
 # sid -> room_id mapping for fast disconnect cleanup
 sid_to_room: dict = {}
 
+# Multiplayer tray / working-area syncing
+mp_rooms: dict[str, set] = {}  
+mp_sid_to_room: dict = {}  
+mp_working: dict[str, list] = {}  
+
+
+def _mp_socket_room(room_id: str) -> str:
+    return f"mp_{room_id}"
+
+
+def _normalize_domino_id(raw) -> int | None:
+    # Client sends dominoId if invalid value is None.
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _validate_mp_placements(raw) -> list | None:
+    # None -> empty board
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        return None
+    out = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        pid = item.get("placementId")
+        if not isinstance(pid, str) or not pid:
+            continue
+        did = _normalize_domino_id(item.get("dominoId"))
+        if did is None:
+            continue
+        out.append({"placementId": pid, "dominoId": did})
+    return out
+
+
+def _handle_mp_disconnect(sid: str) -> bool:
+    # this updates the tray on disconnect
+    room_id = mp_sid_to_room.pop(sid, None)
+    if not room_id:
+        return False
+    sock_room = _mp_socket_room(room_id)
+    members = mp_rooms.get(room_id)
+    if members:
+        members.discard(sid)
+        leave_room(sock_room)
+        if not members:
+            mp_rooms.pop(room_id, None)
+            mp_working.pop(room_id, None)
+        else:
+            socketio.emit("mp_peer_left", {"roomId": room_id}, to=sock_room)
+    return True
+
+
 def _generate_room_id() -> str:
     return uuid.uuid4().hex[:6].upper()
 
@@ -169,6 +227,8 @@ def handle_connect():
 def handle_disconnect():
     sid = request.sid
     print(f"Client disconnected: {sid}")
+    if _handle_mp_disconnect(sid): #tray disconnect
+        return
     room_id = sid_to_room.pop(sid, None)
     if not room_id:
         return
@@ -386,3 +446,61 @@ def handle_leave_room(data):
 
     if not room["players"]:
         rooms.pop(room_id, None)
+
+@socketio.on("mp_create")
+def handle_mp_create(_data=None):
+    sid = request.sid
+    room_id = _generate_room_id()
+    mp_rooms[room_id] = {sid}
+    mp_working[room_id] = []
+    mp_sid_to_room[sid] = room_id
+    join_room(_mp_socket_room(room_id))
+    emit("mp_room_created", {"roomId": room_id})
+
+
+@socketio.on("mp_join")
+def handle_mp_join(data):
+    sid = request.sid
+    room_id = (data or {}).get("roomId", "").upper()
+    if room_id not in mp_rooms:
+        emit("error", {"message": f"Room {room_id or '?'} not found."})
+        return
+    members = mp_rooms[room_id]
+    if len(members) >= 2:
+        emit("error", {"message": "Room is full."})
+        return
+    if sid in members:
+        placements = mp_working.get(room_id, [])
+        emit("mp_working_state", {"roomId": room_id, "placements": placements})
+        return
+    members.add(sid)
+    mp_sid_to_room[sid] = room_id
+    join_room(_mp_socket_room(room_id))
+    emit("mp_joined", {"roomId": room_id})
+    emit(
+        "mp_working_state",
+        {"roomId": room_id, "placements": mp_working.get(room_id, [])},
+    )
+    socketio.emit("mp_peer_joined", {"roomId": room_id}, to=_mp_socket_room(room_id))
+
+
+@socketio.on("mp_set_working")
+def handle_mp_set_working(data):
+    sid = request.sid
+    room_id = (data or {}).get("roomId", "").upper()
+    validated = _validate_mp_placements((data or {}).get("placements"))
+    if validated is None:
+        emit("error", {"message": "Invalid placements."})
+        return
+    if room_id not in mp_rooms:
+        emit("error", {"message": "Invalid room."})
+        return
+    if sid not in mp_rooms[room_id]:
+        emit("error", {"message": "Not in this room."})
+        return
+    mp_working[room_id] = validated
+    socketio.emit(
+        "mp_working_state",
+        {"roomId": room_id, "placements": validated},
+        to=_mp_socket_room(room_id),
+    )

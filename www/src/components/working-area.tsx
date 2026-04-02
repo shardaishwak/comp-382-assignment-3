@@ -7,11 +7,14 @@ import { move } from "@dnd-kit/helpers"
 export default function WorkingArea({
   dominos,
   setDominos,
-  selectedTrayDomino
+  selectedTrayDomino,
+  // When set (for example on the multiplayer page), this is not used in the single player page. which is what the question mark on the onMpWorkingChange? is for.
+  onMpWorkingChange,
 }: {
   dominos: (DominoType & { placementId: string })[]
   setDominos: React.Dispatch<React.SetStateAction<(DominoType & { placementId: string })[]>>
   selectedTrayDomino: DominoType | undefined
+  onMpWorkingChange?: (next: (DominoType & { placementId: string })[]) => void
 }) {
   const { ref, isDropTarget } = useDroppable({
     id: "working-area"
@@ -25,7 +28,12 @@ export default function WorkingArea({
       </div>
       <DragDropProvider
         onDragEnd={(event) => {
-          setDominos((items) => move(items, event))
+          setDominos((items) => {
+            const next = move(items, event)
+            // handels the act of dropping the from the tray into the working area
+            onMpWorkingChange?.(next)
+            return next
+          })
         }}>
         <div
           className="w-full min-h-32.5 flex-1 p-2 flex items-start gap-2 overflow-x-scroll border border-border-normal rounded-xl rounded-tl-none duration-150">
