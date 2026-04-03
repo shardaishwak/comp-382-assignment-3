@@ -138,7 +138,7 @@ When the frontend calls `request_hints`, the socket layer invokes `compute_hints
 - Sophie:
 - Ishwak: https://youtu.be/ZSAzjW7-KGU
 - Darius:
-- Yahya:
+- Yahya: https://youtu.be/CUtnmnYXpic
 
 
 ### References:
@@ -149,3 +149,4 @@ When the frontend calls `request_hints`, the socket layer invokes `compute_hints
 - pytest. (n.d.). *pytest Documentation*. https://docs.pytest.org/
 - MDN Web Docs. (n.d.). *AudioContext*. https://developer.mozilla.org/en-US/docs/Web/API/AudioContext
 - Flask. (n.d.). *Flask Documentation*. https://flask.palletsprojects.com/
+- Pygame. (n.d.). Pygame Documentation. https://www.pygame.org/docs/
