@@ -148,3 +148,4 @@ When the frontend calls `request_hints`, the socket layer invokes `compute_hints
 - Sipser, M. (2013). *Introduction to the Theory of Computation* (3rd ed.). Cengage Learning. Section 5.2, A Simple Undecidable Problem, pp. 227–233.
 - pytest. (n.d.). *pytest Documentation*. https://docs.pytest.org/
 - MDN Web Docs. (n.d.). *AudioContext*. https://developer.mozilla.org/en-US/docs/Web/API/AudioContext
+- Flask. (n.d.). *Flask Documentation*. https://flask.palletsprojects.com/
