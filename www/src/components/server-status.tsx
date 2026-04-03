@@ -9,7 +9,7 @@ export default function ServerStatus() {
   useEffect(() => {
     let mounted = true
     const ping = () => {
-      fetch(`${SOCKET_URL}/health`, { mode: "cors" })
+      fetch(`${SOCKET_URL}/health`, { mode: "cors", referrerPolicy: "no-referrer" })
         .then((r) => { if (mounted) setOnline(r.ok) })
         .catch(() => { if (mounted) setOnline(false) })
     }
