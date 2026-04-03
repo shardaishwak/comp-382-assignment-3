@@ -173,6 +173,7 @@ export interface GameOptions {
     difficulty: string
     multiplayer: string
     hints: boolean
+    strict: boolean
     timer: boolean
     undo: boolean
 }

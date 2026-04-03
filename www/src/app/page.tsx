@@ -27,7 +27,7 @@ export default function Page() {
     localStorage.setItem("playerName", name)
   }
 
-  const BOOL_OPTIONS = new Set(["hints", "timer", "undo"])
+  const BOOL_OPTIONS = new Set(["hints", "strict", "timer", "undo"])
 
   const getOptionKey = (sourceId: string) =>
     BOOL_OPTIONS.has(sourceId) ? sourceId : sourceId.split("-")[0]
@@ -49,6 +49,7 @@ export default function Page() {
     const opts = new URLSearchParams()
     if (selectedOptions.timer) opts.set("timer", "1")
     if (selectedOptions.hints) opts.set("hints", "1")
+    if (selectedOptions.hints && selectedOptions.strict) opts.set("strict", "1")
     if (selectedOptions.undo) opts.set("undo", "1")
     const optStr = opts.toString() ? `&${opts.toString()}` : ""
 
@@ -69,6 +70,7 @@ export default function Page() {
     selectedOptions.players === "" &&
     selectedOptions.difficulty === "" &&
     !selectedOptions.hints &&
+    !selectedOptions.strict &&
     !selectedOptions.timer &&
     !selectedOptions.undo
 

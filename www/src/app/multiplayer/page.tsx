@@ -29,8 +29,10 @@ function MultiplayerContent() {
 
   // Host uses URL params; joiner gets options from the server (host's settings)
   const showTimer = mode === "host" ? urlTimer : game.gameOptions.useTimer
+  const urlStrict = searchParams.get("strict") === "1"
   const showHints = mode === "host" ? urlHints : game.gameOptions.showHints
   const showUndo = mode === "host" ? urlUndo : game.gameOptions.showUndo
+  const strictHints = showHints && urlStrict
   const hasInitialized = useRef(false)
   const prevSolved = useRef(false)
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
@@ -118,14 +120,25 @@ function MultiplayerContent() {
                 if (event.operation.target?.id === "working-area") {
                   const src = event.operation.source
                   if (src && !isSortable(src)) {
-                    game.placeDomino(src.id as number)
-                    soundEffect.place()
+                    const id = src.id as number
+                    if (strictHints && !game.validNextIds.includes(id)) {
+                      soundEffect.error()
+                    } else {
+                      game.placeDomino(id)
+                      soundEffect.place()
+                    }
                   }
                 }
                 setSelectedTrayDomino(undefined)
               }}
             >
-              <TrayArea dominos={game.instance} validNextIds={showHints ? game.validNextIds : []} onDominoClick={(id) => { if (game.isMyTurn) { game.placeDomino(id); soundEffect.place() } }} disabled={!game.isMyTurn} />
+              <TrayArea
+                dominos={game.instance}
+                validNextIds={showHints ? game.validNextIds : []}
+                onDominoClick={(id) => { if (game.isMyTurn) { game.placeDomino(id); soundEffect.place() } }}
+                onRejectClick={strictHints ? () => soundEffect.error() : undefined}
+                disabled={!game.isMyTurn}
+              />
               <WorkingArea dominos={game.sequence} selectedTrayDomino={selectedTrayDomino} />
             </DragDropProvider>
 

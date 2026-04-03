@@ -20,6 +20,7 @@ function SinglePlayerContent() {
   const difficulty = (searchParams.get("difficulty") || "medium") as LevelId
   const showTimer = searchParams.get("timer") === "1"
   const showHints = searchParams.get("hints") === "1"
+  const strictHints = showHints && searchParams.get("strict") === "1"
   const showUndo = searchParams.get("undo") === "1"
   const game = useGameSocket()
   const hasCreated = useRef(false)
@@ -70,14 +71,24 @@ function SinglePlayerContent() {
               if (event.operation.target?.id === "working-area") {
                 const src = event.operation.source
                 if (src && !isSortable(src)) {
-                  game.placeDomino(src.id as number)
-                  soundEffect.place()
+                  const id = src.id as number
+                  if (strictHints && !game.validNextIds.includes(id)) {
+                    soundEffect.error()
+                  } else {
+                    game.placeDomino(id)
+                    soundEffect.place()
+                  }
                 }
               }
               setSelectedTrayDomino(undefined)
             }}
           >
-            <TrayArea dominos={game.instance} validNextIds={showHints ? game.validNextIds : []} onDominoClick={(id) => { game.placeDomino(id); soundEffect.place() }} />
+            <TrayArea
+              dominos={game.instance}
+              validNextIds={showHints ? game.validNextIds : []}
+              onDominoClick={(id) => { game.placeDomino(id); soundEffect.place() }}
+              onRejectClick={strictHints ? () => soundEffect.error() : undefined}
+            />
             <WorkingArea dominos={game.sequence} selectedTrayDomino={selectedTrayDomino} />
           </DragDropProvider>
         )}

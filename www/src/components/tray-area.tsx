@@ -5,11 +5,13 @@ export default function TrayArea({
   dominos,
   validNextIds = [],
   onDominoClick,
+  onRejectClick,
   disabled = false,
 }: {
   dominos: DominoType[]
   validNextIds?: number[]
   onDominoClick?: (dominoId: number) => void
+  onRejectClick?: () => void
   disabled?: boolean
 }) {
   return (
@@ -26,6 +28,7 @@ export default function TrayArea({
             bottom={domino.bottom}
             isHint={validNextIds.includes(domino.id)}
             onClick={onDominoClick ? () => onDominoClick(domino.id) : undefined}
+            onReject={onRejectClick}
             disabled={disabled}
           />
         ))}

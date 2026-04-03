@@ -80,6 +80,9 @@ export default function OptionsDropArea({
         {display.hints && (
           <OptionDomino id="hints-placed" n={1} text="hints" opacity={isCurSelected("hints")} disabled />
         )}
+        {display.strict && (
+          <OptionDomino id="strict-placed" n={1} text="strict" opacity={isCurSelected("strict")} disabled />
+        )}
         {display.timer && (
           <OptionDomino id="timer-placed" n={1} text="timer" opacity={isCurSelected("timer")} disabled />
         )}
