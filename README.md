@@ -19,10 +19,13 @@ https://github.com/users/shardaishwak/projects/3
 ## Architecture
 
 ### System Overview
+<img width="2033" height="2516" alt="mermaid-diagram-2026-04-03-145403" src="https://github.com/user-attachments/assets/8b184dab-ed3a-4c4d-b790-3fe8fa6b6307" />
 
 ### Game Flow (Single Player)
+<img width="2762" height="2272" alt="mermaid-diagram-2026-04-03-145417" src="https://github.com/user-attachments/assets/fee9d765-3b7d-4aa0-97f5-7de4fef1871b" />
 
 ### Multiplayer Flow
+<img width="2820" height="1856" alt="mermaid-diagram-2026-04-03-145425" src="https://github.com/user-attachments/assets/2b483758-9bbc-4451-87ca-bdb821f4f798" />
 
 
 ## Game State Manager
