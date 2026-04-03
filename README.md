@@ -9,6 +9,15 @@ https://github.com/users/shardaishwak/projects/3
 - Python 3.11
 - Node.JS 21+: Preferred 22
 
+## Architecture
+
+### System Overview
+
+### Game Flow (Single Player)
+
+### Multiplayer Flow
+
+
 ## Game State Manager
 The game state manager (`backend/app/game/pcp_game_state.py`) is the single
 source of truth for all PCP game logic. It tracks the domino set, the player's
@@ -255,6 +264,16 @@ interface GameOptions {
     undo: boolean;
 }
 ```
+
+## AI Usage
+
+AI tools (primarily Claude and GitHub Copilot) were used sparingly and exclusively for debugging. Specifically in situations where a bug was taking too long to identify manually. AI was used to **locate** the issue, not to write the fix; all patches were applied through manual intervention.
+
+### Notable cases
+
+1. **AWS CORS issue** — When integrating the backend on AWS, requests from the frontend were being blocked by CORS. After several failed deployment attempts, AI was used to spot that the issue was a missing environment variable in the AWS configuration.
+
+2. **Domino generation bug** — During testing, a specific configuration (a string of length 16 split across 8 dominoes) was producing domino sets that could be solved in a single move. The root cause was subtle and difficult to trace manually. After multiple attempts, AI was used to identify the faulty generation logic.
 
 ### References:
 - Socket.IO. (n.d.). *Flask-SocketIO Documentation*. https://flask-socketio.readthedocs.io/
