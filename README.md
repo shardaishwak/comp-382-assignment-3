@@ -3,6 +3,13 @@
 ## Project Board
 https://github.com/users/shardaishwak/projects/3
 
+## Contributors
+- Brayden ([@Blake1332](https://github.com/Blake1332))
+- Ryan ([@DarksteelCitadel](https://github.com/DarksteelCitadel))
+- Sophie ([@catfetti](https://github.com/catfetti))
+- Ishwak ([@shardaishwak](https://github.com/shardaishwak))
+- Darius ([@Darius.Gillingham](https://github.com/Darius.Gillingham))
+- Yahya ([@phonkmonk](https://github.com/phonkmonk))
 
 ## Prerequisites
 
@@ -144,15 +151,6 @@ https://github.com/user-attachments/assets/48dd18f9-6418-49e2-8e25-39ba3f55e14d
 
 When the frontend calls `request_hints`, the socket layer invokes `compute_hints()` on the current `PCPGameState`.
 
-### Work Logs
-- Brayden: https://www.youtube.com/watch?v=zTOOrhOVr9o
-- Ryan:
-- Sophie: https://youtu.be/XyjNzgxFIQk
-- Ishwak: https://youtu.be/ZSAzjW7-KGU
-- Darius:
-- Yahya: https://youtu.be/CUtnmnYXpic
-
-
 ## Data Types
 
 The shared TypeScript types used across the project are defined in `www/src/app/lib/types.ts`. These types served as a contract between the backend and frontend teams — since the backend would receive requests and send responses based on these interfaces, the frontend team could work independently using dummy data that matched the same shapes, keeping both teams in sync throughout development.
@@ -284,3 +282,11 @@ AI tools (primarily Claude and GitHub Copilot) were used sparingly and exclusive
 - MDN Web Docs. (n.d.). *AudioContext*. https://developer.mozilla.org/en-US/docs/Web/API/AudioContext
 - Flask. (n.d.). *Flask Documentation*. https://flask.palletsprojects.com/
 - Pygame. (n.d.). Pygame Documentation. https://www.pygame.org/docs/
+
+### Work Logs
+- Brayden: https://www.youtube.com/watch?v=zTOOrhOVr9o
+- Ryan:
+- Sophie: https://youtu.be/XyjNzgxFIQk
+- Ishwak: https://youtu.be/ZSAzjW7-KGU
+- Darius:
+- Yahya: https://youtu.be/CUtnmnYXpic
