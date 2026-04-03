@@ -354,6 +354,11 @@ def generate_structured_instance(
 
         if all(top_segments[i] != bottom_segments[i] for i in range(array_length)):
             break
+    else:
+        raise RuntimeError(
+            "Could not generate partitions where every domino has distinct top/bottom. "
+            "Try increasing string_length or decreasing min_segment_length."
+        )
 
     dominoes = [
         Domino(

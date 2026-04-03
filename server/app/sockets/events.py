@@ -35,7 +35,7 @@ LEVEL_CONFIG = {
         "name": "Hard",
         "description": "Longer strings, more dominoes",
         "dominoes": 8,
-        "stringLength": 16,
+        "stringLength": 24,
         "minSegment": 2,
         "maxSegment": 4,
         "time": 180,
