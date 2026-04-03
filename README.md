@@ -105,6 +105,10 @@ The system doesn't just guess — it **actually finds real solutions** behind th
    - Does it create a good partial match? (Partial prefix)
    - Does it reduce the length gap between top and bottom? (Balancing)
    - Is it just exploratory when no solutions exist? (Exploratory)
+  
+### Video
+
+https://github.com/user-attachments/assets/48dd18f9-6418-49e2-8e25-39ba3f55e14d
 
 ### Hint Types & Priorities
 
