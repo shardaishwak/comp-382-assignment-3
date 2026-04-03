@@ -1,5 +1,8 @@
 # COMP-382-Assignment-3
 
+## Project Board
+https://github.com/users/shardaishwak/projects/3
+
 
 ## Prerequisites
 
@@ -140,6 +143,118 @@ When the frontend calls `request_hints`, the socket layer invokes `compute_hints
 - Darius:
 - Yahya: https://youtu.be/CUtnmnYXpic
 
+
+## Data Types
+
+The shared TypeScript types used across the project are defined in `www/src/app/lib/types.ts`. These types served as a contract between the backend and frontend teams — since the backend would receive requests and send responses based on these interfaces, the frontend team could work independently using dummy data that matched the same shapes, keeping both teams in sync throughout development.
+
+### Core Types
+
+```typescript
+type Symbol = "R" | "G" | "B"
+
+interface Domino {
+    id: number;
+    top: Symbol[]
+    bottom: Symbol[]
+}
+
+interface PlacedDomino extends Domino {
+    placementId: string;
+    position: number;
+}
+
+interface PlayerState {
+    sid: string;
+    name: string;
+    sequence: PlacedDomino[]
+    moves: number;
+    score: number;
+    hintsEnabled: number;
+    connected: number;
+}
+
+type LevelId = "easy" | "medium" | "hard";
+
+interface Level {
+    id: LevelId;
+    name: string;
+    description: string;
+    time: number;
+    dominoes: number;
+    stringLength: number;
+    minSegment: number;
+    maxSegment: number;
+}
+```
+
+### Game State
+
+```typescript
+interface RoomState {
+    roomId: string;
+    level: Level;
+    instance: Domino[];
+    players: Record<string, PlayerState>
+    timer: number;
+    status: "waiting" | "playing" | "finished"
+    winner: string | null;
+}
+
+interface GameState {
+    yourState: PlayerState;
+    opponentState: PlayerState;
+    instance: Domino[];
+    timer: number;
+    status: "waiting" | "playing" | "finished"
+    validNextIds: number[]
+    isDeadend: boolean;
+    prefixMatch: number;
+}
+```
+
+### Client → Server Payloads
+
+```typescript
+interface CreateRoomPayload { playerName: string; level: LevelId; }
+interface JoinRoomPayload { roomId: string; playerName: string; }
+interface PlaceDominoPayload { roomId: string; dominoId: number; }
+interface UndoMovePayload { roomId: string; }
+interface ResetSequencePayload { roomId: string; }
+interface RequestHintsPayload { roomId: string; }
+interface LeaveRoomPayload { roomId: string; }
+```
+
+### Server → Client Events
+
+```typescript
+interface RoomCreatedEvent { roomId: string; level: Level; instance: Domino[]; }
+interface PlayerJoinedEvent { roomId: string; playerName: string; playerId: string; }
+interface GameStartEvent { roomId: string; level: Level; instance: Domino[]; players: Record<string, PlayerState>; timer: number; }
+interface MoveResultEvent { sequence: PlacedDomino[]; topString: string; bottomString: string; validNextIds: number[]; isDeadEnd: boolean; isSolved: boolean; prefixMatch: number; moves: number; }
+interface OpponentUpdateEvent { opponentId: string; sequence: PlacedDomino[]; moves: number; prefixMatch: number; }
+interface HintData { dominoId: number; score: number; explanation: string; }
+interface HintUpdateEvent { hints: HintData[]; bestHint: HintData | null; }
+interface TimerTickEvent { roomId: string; remaining: number; }
+interface TimeUpEvent { roomId: string; winner: string | null; }
+interface MatchFoundEvent { roomId: string; winnerId: string; winnerName: string; sequence: PlacedDomino[]; }
+interface PlayerLeftEvent { roomId: string; playerId: string; playerName: string; }
+interface ErrorEvent { message: string; }
+```
+
+### Game Options
+
+```typescript
+interface GameOptions {
+    players: string;
+    difficulty: string;
+    multiplayer: string;
+    hints: boolean;
+    strict: boolean;
+    timer: boolean;
+    undo: boolean;
+}
+```
 
 ### References:
 - Socket.IO. (n.d.). *Flask-SocketIO Documentation*. https://flask-socketio.readthedocs.io/
