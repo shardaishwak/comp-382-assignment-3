@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import { socket } from "../lib/socket"
+import { SOCKET_URL } from "../lib/constants"
 import type {
   Domino,
   LevelId,
@@ -206,7 +207,7 @@ export function useGameSocket() {
   useEffect(() => {
     if (status !== "waiting" || !roomIdRef.current) return
     const interval = setInterval(() => {
-      fetch(`http://localhost:5001/api/room_state/${roomIdRef.current}`)
+      fetch(`${SOCKET_URL}/api/room_state/${roomIdRef.current}`)
         .then((r) => r.json())
         .then((result) => {
           if (result.status === "playing") {
@@ -234,7 +235,7 @@ export function useGameSocket() {
   useEffect(() => {
     if (status !== "playing" || !roomIdRef.current) return
     const interval = setInterval(() => {
-      fetch(`http://localhost:5001/api/game_state/${roomIdRef.current}`)
+      fetch(`${SOCKET_URL}/api/game_state/${roomIdRef.current}`)
         .then((r) => r.json())
         .then((result) => {
           if (result.error) return
@@ -258,7 +259,7 @@ export function useGameSocket() {
 
   const createRoom = useCallback((playerName: string, levelId: LevelId, singlePlayer = false, useTimer = true, showHints = false, showUndo = false) => {
     setGameOptions({ showHints, showUndo, useTimer })
-    fetch("http://localhost:5001/api/create_room", {
+    fetch(`${SOCKET_URL}/api/create_room`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sid: socket.id, playerName, level: levelId, singlePlayer, useTimer, showHints, showUndo }),
@@ -278,7 +279,7 @@ export function useGameSocket() {
   }, [])
 
   const joinRoom = useCallback((joinRoomId: string, playerName: string) => {
-    fetch("http://localhost:5001/api/join_room", {
+    fetch(`${SOCKET_URL}/api/join_room`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sid: socket.id, roomId: joinRoomId, playerName }),
@@ -312,7 +313,7 @@ export function useGameSocket() {
 
   const placeDomino = useCallback((dominoId: number) => {
     if (!roomIdRef.current) return
-    fetch("http://localhost:5001/api/place", {
+    fetch(`${SOCKET_URL}/api/place`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roomId: roomIdRef.current, sid: socket.id, dominoId }),
@@ -334,7 +335,7 @@ export function useGameSocket() {
 
   const undoMove = useCallback(() => {
     if (!roomIdRef.current) return
-    fetch("http://localhost:5001/api/undo", {
+    fetch(`${SOCKET_URL}/api/undo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roomId: roomIdRef.current, sid: socket.id }),
@@ -352,7 +353,7 @@ export function useGameSocket() {
 
   const resetSequence = useCallback(() => {
     if (!roomIdRef.current) return
-    fetch("http://localhost:5001/api/reset", {
+    fetch(`${SOCKET_URL}/api/reset`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roomId: roomIdRef.current, sid: socket.id }),
