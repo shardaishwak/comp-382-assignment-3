@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense, useEffect, useRef, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { DragDropProvider } from "@dnd-kit/react"
 import { isSortable } from "@dnd-kit/react/sortable"
 
@@ -14,6 +14,7 @@ import TrayArea from "@/components/tray-area"
 import WorkingArea from "@/components/working-area"
 import ChainView from "@/components/chain-view"
 import GameOverModal from "@/components/game-over-modal"
+import LeaveGameModal from "@/components/leave-game-modal"
 
 function SinglePlayerContent() {
   const searchParams = useSearchParams()
@@ -22,10 +23,12 @@ function SinglePlayerContent() {
   const showHints = searchParams.get("hints") === "1"
   const strictHints = showHints && searchParams.get("strict") === "1"
   const showUndo = searchParams.get("undo") === "1"
+  const router = useRouter()
   const game = useGameSocket()
   const hasCreated = useRef(false)
   const prevSolved = useRef(false)
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
   const playerName = typeof window !== "undefined" ? (localStorage.getItem("playerName") || "Player 1") : "Player 1"
 
   useEffect(() => {
@@ -34,6 +37,23 @@ function SinglePlayerContent() {
       game.createRoom(playerName, difficulty, true, showTimer)
     }
   }, [game.isConnected, difficulty, game.createRoom])
+
+  // Intercept browser back button
+  useEffect(() => {
+    if (game.status !== "playing") return
+    window.history.pushState(null, "", window.location.href)
+    const onPopState = () => {
+      window.history.pushState(null, "", window.location.href)
+      setShowLeaveModal(true)
+    }
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [game.status])
+
+  const handleLeave = () => {
+    game.leaveRoom()
+    router.push("/")
+  }
 
   useEffect(() => {
     if (game.isSolved && !prevSolved.current) {
@@ -55,6 +75,7 @@ function SinglePlayerContent() {
         onUndo={showUndo ? game.undoMove : undefined}
         onReset={game.resetSequence}
         onRequestHints={showHints ? game.requestHints : undefined}
+        onBack={() => setShowLeaveModal(true)}
       />
       <main className="w-full flex-1 px-8 py-8 md:px-16 md:py-16 flex flex-col items-center gap-4 md:gap-8">
         {game.status === "playing" && (
@@ -134,6 +155,13 @@ function SinglePlayerContent() {
           winner={game.isSolved ? { id: "you", name: playerName } : null}
           prefixMatch={game.prefixMatch}
           moves={game.moves}
+        />
+      )}
+
+      {showLeaveModal && (
+        <LeaveGameModal
+          onStay={() => setShowLeaveModal(false)}
+          onLeave={handleLeave}
         />
       )}
     </div>

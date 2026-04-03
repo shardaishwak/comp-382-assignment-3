@@ -13,6 +13,7 @@ export default function MenuBar({
   onUndo,
   onReset,
   onRequestHints,
+  onBack,
 }: {
   p1: string
   p2: string
@@ -21,6 +22,7 @@ export default function MenuBar({
   onUndo?: () => void
   onReset?: () => void
   onRequestHints?: () => void
+  onBack?: () => void
 }) {
   const formatTime = (ms: number): string => {
     const totalSeconds = Math.floor(ms / 1000)
@@ -36,7 +38,7 @@ export default function MenuBar({
     <div className="px-8 md:px-16 border-b border-border-normal">
       <div className="h-16 bg-background grid grid-cols-2">
         <div className="flex items-center gap-4 md:gap-6">
-          <Button type="button" onClick={() => router.push("/")}>
+          <Button type="button" onClick={onBack ?? (() => router.push("/"))}>
             <ArrowLeftIcon className="w-4 h-4" />
             <p className="hidden md:inline">Back</p>
           </Button>

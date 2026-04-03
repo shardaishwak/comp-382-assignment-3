@@ -14,6 +14,7 @@ import TrayArea from "@/components/tray-area"
 import WorkingArea from "@/components/working-area"
 import ChainView from "@/components/chain-view"
 import GameOverModal from "@/components/game-over-modal"
+import LeaveGameModal from "@/components/leave-game-modal"
 
 function MultiplayerContent() {
   const router = useRouter()
@@ -36,6 +37,7 @@ function MultiplayerContent() {
   const hasInitialized = useRef(false)
   const prevSolved = useRef(false)
   const [selectedTrayDomino, setSelectedTrayDomino] = useState<Domino | undefined>()
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
   const playerName = typeof window !== "undefined" ? (localStorage.getItem("playerName") || "Player") : "Player"
 
   useEffect(() => {
@@ -58,6 +60,23 @@ function MultiplayerContent() {
     prevSolved.current = game.isSolved
   }, [game.isSolved])
 
+  // Intercept browser back button
+  useEffect(() => {
+    if (game.status !== "playing" && game.status !== "waiting") return
+    window.history.pushState(null, "", window.location.href)
+    const onPopState = () => {
+      window.history.pushState(null, "", window.location.href)
+      setShowLeaveModal(true)
+    }
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [game.status])
+
+  const handleLeave = () => {
+    game.leaveRoom()
+    router.push("/")
+  }
+
   if (!mode && !roomCode) return null
 
   const maxLen = Math.max(game.topString.length, game.bottomString.length, 1)
@@ -73,6 +92,7 @@ function MultiplayerContent() {
         onUndo={showUndo && game.status === "playing" && game.isMyTurn ? game.undoMove : undefined}
         onReset={game.status === "playing" && game.isMyTurn ? game.resetSequence : undefined}
         onRequestHints={showHints && game.status === "playing" ? game.requestHints : undefined}
+        onBack={() => setShowLeaveModal(true)}
       />
 
       <main className="w-full flex-1 px-8 py-8 md:px-16 md:py-16 flex flex-col items-center gap-4 md:gap-8">
@@ -182,6 +202,13 @@ function MultiplayerContent() {
           winner={game.winner ? { ...game.winner, name: game.winner.name === "You" ? playerName : game.winner.name } : null}
           prefixMatch={game.prefixMatch}
           moves={game.moves}
+        />
+      )}
+
+      {showLeaveModal && (
+        <LeaveGameModal
+          onStay={() => setShowLeaveModal(false)}
+          onLeave={handleLeave}
         />
       )}
     </div>
