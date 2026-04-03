@@ -7,9 +7,9 @@ https://github.com/users/shardaishwak/projects/3
 - Brayden ([@Blake1332](https://github.com/Blake1332))
 - Ryan ([@DarksteelCitadel](https://github.com/DarksteelCitadel))
 - Sophie ([@catfetti](https://github.com/catfetti))
-- Ishwak ([@shardaishwak](https://github.com/shardaishwak))
+- Ishwak ([@shardaishwak](https://github.com/shardaishwak), [@phonkmonk](https://github.com/phonkmonk))
 - Darius ([@Darius.Gillingham](https://github.com/Darius.Gillingham))
-- Yahya ([@phonkmonk](https://github.com/phonkmonk))
+- Yahya
 
 ## Prerequisites
 
