@@ -135,3 +135,12 @@ When the frontend calls `request_hints`, the socket layer invokes `compute_hints
 - Ishwak: https://youtu.be/ZSAzjW7-KGU
 - Darius:
 - Yahya:
+
+
+### References:
+- Socket.IO. (n.d.). *Flask-SocketIO Documentation*. https://flask-socketio.readthedocs.io/
+- Next.js. (n.d.). *Next.js Documentation*. https://nextjs.org/docs
+- Tailwind CSS. (n.d.). *Tailwind CSS Documentation*. https://tailwindcss.com/docs
+- Sipser, M. (2013). *Introduction to the Theory of Computation* (3rd ed.). Cengage Learning. Section 5.2, A Simple Undecidable Problem, pp. 227–233.
+- pytest. (n.d.). *pytest Documentation*. https://docs.pytest.org/
+- MDN Web Docs. (n.d.). *AudioContext*. https://developer.mozilla.org/en-US/docs/Web/API/AudioContext
