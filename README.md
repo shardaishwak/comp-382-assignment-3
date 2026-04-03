@@ -135,7 +135,7 @@ When the frontend calls `request_hints`, the socket layer invokes `compute_hints
 ### Work Logs
 - Brayden: https://www.youtube.com/watch?v=zTOOrhOVr9o
 - Ryan:
-- Sophie: https://youtu.be/MTH1XI4sXlc
+- Sophie: https://youtu.be/XyjNzgxFIQk
 - Ishwak: https://youtu.be/ZSAzjW7-KGU
 - Darius:
 - Yahya: https://youtu.be/CUtnmnYXpic
