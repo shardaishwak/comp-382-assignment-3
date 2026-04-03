@@ -127,3 +127,11 @@ The system doesn't just guess — it **actually finds real solutions** behind th
 ### Integration with Frontend
 
 When the frontend calls `request_hints`, the socket layer invokes `compute_hints()` on the current `PCPGameState`.
+
+### Work Logs
+- Brayden: https://www.youtube.com/watch?v=zTOOrhOVr9o
+- Ryan:
+- Sophie:
+- Ishwak:
+- Darius:
+- Yahya:
