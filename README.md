@@ -9,7 +9,7 @@ https://github.com/users/shardaishwak/projects/3
 - Sophie ([@catfetti](https://github.com/catfetti))
 - Ishwak ([@shardaishwak](https://github.com/shardaishwak), [@phonkmonk](https://github.com/phonkmonk))
 - Darius ([@Darius.Gillingham](https://github.com/Darius.Gillingham))
-- Yahya
+- Yahya ([@YahyaChebab](https://github.com/YahyaChebab))
 
 ## Prerequisites
 
