@@ -3,6 +3,9 @@
 ## Project Board
 https://github.com/users/shardaishwak/projects/3
 
+## Production URL (hosted on AWS-EC2)
+URL: http://3.87.106.173
+
 ## Contributors
 - Brayden ([@Blake1332](https://github.com/Blake1332))
 - Ryan ([@DarksteelCitadel](https://github.com/DarksteelCitadel))
