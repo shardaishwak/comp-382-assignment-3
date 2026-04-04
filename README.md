@@ -265,7 +265,46 @@ interface GameOptions {
     undo: boolean;
 }
 ```
+## Structured Domino Generation
+first takes in the info for the range for the lengths of strings allowed for the dominoes, how many dominoes, 
 
+then it generates a string of roughly the length of Number of dominoes × average string length per top/bottom of dominoe
+
+then it generates 2 arrays both of a length = to the number of dominoes
+
+then each array is populated with random integers inside the range of allowed string lengths on top and bottom
+
+then each array assigns dominoe top and bottom based on reading from the central string. example 
+
+min = 1
+max = 3
+N = 3
+
+String
+RGBRGB
+
+array 1
+1, 3, 2
+
+array 2
+2, 3, 1
+
+dominoes
+R
+----
+RG
+
+next
+
+GBR
+----
+BRG
+
+next
+
+GB
+---
+B
 ## AI Usage
 
 AI tools (primarily Claude and GitHub Copilot) were used sparingly and exclusively for debugging. Specifically in situations where a bug was taking too long to identify manually. AI was used to **locate** the issue, not to write the fix; all patches were applied through manual intervention.
@@ -291,5 +330,5 @@ AI tools (primarily Claude and GitHub Copilot) were used sparingly and exclusive
 - Ryan: https://youtu.be/I31j0GDk6SU
 - Sophie: https://youtu.be/XyjNzgxFIQk
 - Ishwak: https://youtu.be/ZSAzjW7-KGU
-- Darius:
+- Darius: https://youtu.be/cNbrRsC3N1k
 - Yahya: https://youtu.be/CUtnmnYXpic
