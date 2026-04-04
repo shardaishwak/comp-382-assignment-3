@@ -288,7 +288,7 @@ AI tools (primarily Claude and GitHub Copilot) were used sparingly and exclusive
 
 ### Work Logs
 - Brayden: https://www.youtube.com/watch?v=zTOOrhOVr9o
-- Ryan:
+- Ryan: https://youtu.be/I31j0GDk6SU
 - Sophie: https://youtu.be/XyjNzgxFIQk
 - Ishwak: https://youtu.be/ZSAzjW7-KGU
 - Darius:
